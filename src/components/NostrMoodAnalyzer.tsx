@@ -165,29 +165,30 @@ const NostrMoodAnalyzer = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-2xl mx-auto space-y-4 p-2">
       <Card className="border-border bg-card shadow-[var(--shadow-card)]">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
             NostrMood
           </CardTitle>
-          <CardDescription className="text-lg">
-            Analyze the sentiment of any Nostr post using AI-powered sentiment analysis
+          <CardDescription className="text-base md:text-lg">
+            Analyze sentiment of Nostr posts
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <CardContent className="space-y-3 p-4">
+          <div className="flex flex-col gap-2">
             <Input
               placeholder="Enter Nostr post ID (nevent1..., note1..., or 64-char hex)"
               value={postId}
               onChange={(e) => setPostId(e.target.value)}
-              className="flex-1 bg-input border-border"
+              className="flex-1 bg-input border-border text-sm"
               disabled={isLoading}
             />
             <Button 
               onClick={analyzeSentiment}
               disabled={isLoading || !postId.trim()}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[120px]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+              size="sm"
             >
               {isLoading ? (
                 <>
@@ -204,54 +205,58 @@ const NostrMoodAnalyzer = () => {
           </div>
           
           {result && (
-            <Card className="mt-6 border-border bg-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
+            <Card className="mt-4 border-border bg-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageCircle className="h-4 w-4" />
                   Analysis Result
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-muted-foreground">Sentiment:</span>
-                  <Badge 
-                    variant="outline" 
-                    className={`border-${getSentimentColor(result.sentiment.score)} text-${getSentimentColor(result.sentiment.score)} bg-${getSentimentColor(result.sentiment.score)}/10 flex items-center gap-1`}
-                  >
-                    {getSentimentIcon(result.sentiment.score)}
-                    {getSentimentLabel(result.sentiment.score)}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    Score: {result.sentiment.score} | Comparative: {result.sentiment.comparative.toFixed(3)}
-                  </span>
+              <CardContent className="space-y-3 p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Sentiment:</span>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      className={`border-${getSentimentColor(result.sentiment.score)} text-${getSentimentColor(result.sentiment.score)} bg-${getSentimentColor(result.sentiment.score)}/10 flex items-center gap-1 text-xs`}
+                    >
+                      {getSentimentIcon(result.sentiment.score)}
+                      {getSentimentLabel(result.sentiment.score)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      Score: {result.sentiment.score} | Comparative: {result.sentiment.comparative.toFixed(3)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-semibold">Post Content:</h4>
-                  <div className="p-3 bg-muted rounded-md text-sm">
-                    {result.postContent}
+                  <h4 className="font-semibold text-sm">Post Content:</h4>
+                  <div className="p-3 bg-muted rounded-md text-xs leading-relaxed break-words overflow-hidden">
+                    <div className="max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20">
+                      {result.postContent}
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 text-xs">
+                  <div className="space-y-1">
                     <span className="font-medium">Author:</span>
-                    <p className="text-muted-foreground font-mono">{result.postAuthor}</p>
+                    <p className="text-muted-foreground font-mono break-all">{result.postAuthor}</p>
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <span className="font-medium">Post ID:</span>
-                    <p className="text-muted-foreground font-mono break-all">{result.postId}</p>
+                    <p className="text-muted-foreground font-mono break-all text-[10px] leading-tight">{result.postId}</p>
                   </div>
                 </div>
 
                 {(result.sentiment.positive.length > 0 || result.sentiment.negative.length > 0) && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {result.sentiment.positive.length > 0 && (
                       <div>
-                        <h5 className="font-medium text-positive mb-2">Positive Words:</h5>
+                        <h5 className="font-medium text-positive mb-1 text-xs">Positive Words:</h5>
                         <div className="flex flex-wrap gap-1">
                           {result.sentiment.positive.map((word, index) => (
-                            <Badge key={index} variant="outline" className="text-positive border-positive/30 bg-positive/10">
+                            <Badge key={index} variant="outline" className="text-positive border-positive/30 bg-positive/10 text-[10px] px-1 py-0">
                               {word}
                             </Badge>
                           ))}
@@ -261,10 +266,10 @@ const NostrMoodAnalyzer = () => {
                     
                     {result.sentiment.negative.length > 0 && (
                       <div>
-                        <h5 className="font-medium text-negative mb-2">Negative Words:</h5>
+                        <h5 className="font-medium text-negative mb-1 text-xs">Negative Words:</h5>
                         <div className="flex flex-wrap gap-1">
                           {result.sentiment.negative.map((word, index) => (
-                            <Badge key={index} variant="outline" className="text-negative border-negative/30 bg-negative/10">
+                            <Badge key={index} variant="outline" className="text-negative border-negative/30 bg-negative/10 text-[10px] px-1 py-0">
                               {word}
                             </Badge>
                           ))}
