@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { SimplePool, Event } from 'nostr-tools';
+import { SimplePool, Event, nip19 } from 'nostr-tools';
 import Sentiment from 'sentiment';
 
 interface SentimentResult {
@@ -41,8 +41,41 @@ const NostrMoodAnalyzer = () => {
     'wss://relay.current.fyi'
   ];
 
-  const validateEventId = (id: string): boolean => {
-    return /^[a-f0-9]{64}$/i.test(id);
+  const validateAndExtractEventId = (input: string): string | null => {
+    const trimmedInput = input.trim();
+    
+    // Check if it's a raw hex string (64 characters)
+    if (/^[a-f0-9]{64}$/i.test(trimmedInput)) {
+      return trimmedInput;
+    }
+    
+    // Check if it's a nevent string
+    if (trimmedInput.startsWith('nevent1')) {
+      try {
+        const decoded = nip19.decode(trimmedInput);
+        if (decoded.type === 'nevent' && decoded.data.id) {
+          return decoded.data.id;
+        }
+      } catch (error) {
+        console.error('Failed to decode nevent:', error);
+        return null;
+      }
+    }
+    
+    // Check if it's a note string
+    if (trimmedInput.startsWith('note1')) {
+      try {
+        const decoded = nip19.decode(trimmedInput);
+        if (decoded.type === 'note') {
+          return decoded.data;
+        }
+      } catch (error) {
+        console.error('Failed to decode note:', error);
+        return null;
+      }
+    }
+    
+    return null;
   };
 
   const analyzeSentiment = async () => {
@@ -55,10 +88,12 @@ const NostrMoodAnalyzer = () => {
       return;
     }
 
-    if (!validateEventId(postId.trim())) {
+    const eventId = validateAndExtractEventId(postId);
+    
+    if (!eventId) {
       toast({
         title: "Invalid Post ID",
-        description: "Please enter a valid 64-character hex string",
+        description: "Please enter a valid Nostr event ID (64-character hex, nevent1..., or note1...)",
         variant: "destructive",
       });
       return;
@@ -71,7 +106,7 @@ const NostrMoodAnalyzer = () => {
       const pool = new SimplePool();
       
       const events = await pool.querySync(relays, {
-        ids: [postId.trim()],
+        ids: [eventId],
         kinds: [1] // Text notes
       });
 
@@ -143,7 +178,7 @@ const NostrMoodAnalyzer = () => {
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Enter Nostr post ID (64-character hex string)"
+              placeholder="Enter Nostr post ID (nevent1..., note1..., or 64-char hex)"
               value={postId}
               onChange={(e) => setPostId(e.target.value)}
               className="flex-1 bg-input border-border"
