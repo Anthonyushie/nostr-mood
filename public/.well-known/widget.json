@@ -3,7 +3,7 @@
   "description": "Sentiment analysis for Nostr posts - analyze the emotional tone of any Nostr post using AI-powered sentiment analysis",
   "version": "1.0.0",
   "author": "NostrMood",
-  "homepage": "https://nostrmood.app",
+  "homepage": "https://nostr-mood.vercel.app/",
   "widget": {
     "type": "sentiment-analyzer",
     "category": "social",

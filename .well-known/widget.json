@@ -1,0 +1,11 @@
+{
+    "pubkey": "1cf460b3cc0530d960fdf4681cb6c6df9b5b4507951854ae50a5ef365701ce3c",
+    "widget": {
+      "title": "Nostr-Mood",
+      "appUrl": "https://nostr-mood.vercel.app/",
+      "iconUrl": "https://nostr-mood.vercel.app/logo.png",
+      "imageUrl": "https://nostr-mood.vercel.app/logo.png",
+      "buttonTitle": "Launch Widget",
+      "tags": ["tool", "utility", "nostr"]
+    }
+  }	
