@@ -1,0 +1,62 @@
+{
+  "name": "NostrMood",
+  "description": "Sentiment analysis for Nostr posts - analyze the emotional tone of any Nostr post using AI-powered sentiment analysis",
+  "version": "1.0.0",
+  "author": "NostrMood",
+  "homepage": "https://nostrmood.app",
+  "widget": {
+    "type": "sentiment-analyzer",
+    "category": "social",
+    "tags": ["nostr", "sentiment", "analysis", "mood", "nlp"],
+    "iframe": {
+      "src": "/",
+      "width": 600,
+      "height": 400,
+      "frameborder": 0,
+      "allowtransparency": true,
+      "scrolling": "no"
+    },
+    "embed": {
+      "html": "<iframe src=\"{widget_url}\" width=\"600\" height=\"400\" frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\"></iframe>",
+      "script": "<script async src=\"{widget_url}/embed.js\"></script>"
+    }
+  },
+  "api": {
+    "endpoints": {
+      "analyze": {
+        "method": "POST",
+        "url": "/api/analyze",
+        "description": "Analyze sentiment of a Nostr post",
+        "parameters": {
+          "postId": {
+            "type": "string",
+            "required": true,
+            "description": "64-character hex string representing the Nostr event ID"
+          }
+        },
+        "response": {
+          "type": "object",
+          "properties": {
+            "sentiment": {
+              "type": "object",
+              "description": "Detailed sentiment analysis result"
+            },
+            "postContent": {
+              "type": "string",
+              "description": "The content of the analyzed post"
+            },
+            "postAuthor": {
+              "type": "string",
+              "description": "Author's public key (truncated)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "permissions": {
+    "network": ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band", "wss://nostr-pub.wellorder.net", "wss://relay.current.fyi"],
+    "storage": ["localStorage"]
+  },
+  "manifest_version": 1
+}
