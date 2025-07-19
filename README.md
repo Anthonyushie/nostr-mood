@@ -72,12 +72,21 @@ The application will be available at `http://localhost:5000`.
    - Positive/negative words identified
    - Post content and metadata
 
+### Prediction Markets
+
+After analyzing a post, you can:
+1. **Create prediction markets** based on sentiment thresholds
+2. **Place bets** on whether sentiment will reach certain levels  
+3. **View live odds** that update as more bets are placed
+4. **Automatic settlement** when markets expire based on re-analyzed sentiment
+
 ### YakiHonne Widget Mode
 
 When embedded in YakiHonne, the widget automatically:
 - Connects to the parent application
 - Displays user information
 - Provides a "Share Analysis" button to post results to Nostr
+- Lightning payments for prediction market bets
 
 ## Supported Nostr Relays
 

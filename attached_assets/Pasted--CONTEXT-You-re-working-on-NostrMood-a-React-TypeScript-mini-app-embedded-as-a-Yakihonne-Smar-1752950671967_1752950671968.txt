@@ -1,0 +1,49 @@
+# CONTEXT
+You’re working on “NostrMood,” a React + TypeScript mini‑app embedded as a Yakihonne Smart Widget. It already:
+- Fetches Nostr posts (hex/note1/nevent1) from multiple relays
+- Runs sentiment analysis using the `sentiment` npm package
+- Displays scores, word highlights, author info in a dark‑theme UI
+
+# NEW FEATURE
+Implement an in‑widget “prediction market” for each analyzed target (post ID, hashtag, or author).  
+Users should be able to:
+1. **Create a market** by specifying:
+   - A yes/no question based on sentiment (e.g. “Will this post’s comparative score ≥ 0.5 in the next hour?”)
+   - A stake amount range (min/max sats)
+   - A duration (e.g. 1 hour)
+2. **Place bets** on “Yes” or “No” via Lightning, using Yakihonne Smart Widget’s built‑in payment API
+3. **See live odds** that update as pools change
+4. **Auto‑settle** when the timer expires:
+   - Re‑fetch sentiment
+   - Compare to threshold
+   - Distribute sats from the losing pool to winners (minus a configurable fee)
+
+# REQUIREMENTS & CONSTRAINTS
+- **No regressions**: All existing sentiment‑analysis flows and UI must remain 100% intact.
+- **Type safety**: All new code in TypeScript with strict typings.
+- **State management**: Use React Query (already in the project) or local IndexedDB for market state and odds.
+- **Atomicity**: Ensure payment and state updates are transactional—if a Lightning payment fails, no in‑app state should change.
+- **Isolation**: Wrap new components so that if markets are disabled, the core app still loads normally.
+- **Testing**: Add unit tests (Jest + React Testing Library) for:
+  - Market creation logic
+  - Odds calculation
+  - Settlement flow (mocking the sentiment engine and payments)
+- **UX**: 
+  - “Create Prediction” button appears next to the “Analyze” button.
+  - A modal or slide‑in form collects question, stake, and duration.
+  - Bets and odds display inline under the analysis results.
+  - Countdown timer updates in real time.
+
+# DELIVERABLES
+1. **New components** in `src/components/PredictionMarket/`: `MarketCreator.tsx`, `MarketCard.tsx`, `SettlementBot.ts`
+2. **Hooks/utilities** in `src/hooks/useMarket.ts`, handling pool logic and odds.
+3. **Payments integration** using the Yakihonne Smart Widgets SDK—no external wallet pop‑ups.
+4. **Tests** in `__tests__/predictionMarket.test.tsx` covering 80%+ of new code.
+5. **Ensure build** (`npm run build`) completes without warnings or errors.
+6. **Manual QA checklist** in `README.md` under “Prediction Market”:
+   - Create market → check state update
+   - Place bet → inspect pool sizes
+   - Timer expiration → correct settlement and payments
+   - Core analysis still works if markets disabled
+
+Please scaffold and implement this feature end‑to‑end, preserving all current functionality and ensuring no bugs or regressions anywhere else in the app.  

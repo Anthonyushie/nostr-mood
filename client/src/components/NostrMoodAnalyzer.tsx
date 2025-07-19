@@ -8,6 +8,7 @@ import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus, User }
 import { SimplePool, Event, nip19 } from 'nostr-tools';
 import Sentiment from 'sentiment';
 import SWHandler from 'smart-widget-handler';
+import PredictionMarketContainer from './PredictionMarket/PredictionMarketContainer';
 
 interface SentimentResult {
   score: number;
@@ -19,7 +20,7 @@ interface SentimentResult {
   negative: string[];
 }
 
-interface AnalysisResult {
+export interface AnalysisResult {
   sentiment: SentimentResult;
   postContent: string;
   postAuthor: string;
@@ -278,24 +279,26 @@ Original post: "${result.postContent.slice(0, 100)}${result.postContent.length >
               className="flex-1 bg-input border-border text-sm"
               disabled={isLoading}
             />
-            <Button 
-              onClick={analyzeSentiment}
-              disabled={isLoading || !postId.trim()}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
-              size="sm"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Analyze
-                </>
-              )}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={analyzeSentiment}
+                disabled={isLoading || !postId.trim()}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
+                size="sm"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Analyze
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           
           {result && (
@@ -387,6 +390,15 @@ Original post: "${result.postContent.slice(0, 100)}${result.postContent.length >
                 )}
               </CardContent>
             </Card>
+          )}
+          
+          {/* Prediction Markets Integration */}
+          {result && (
+            <PredictionMarketContainer 
+              analysisResult={result}
+              userPubkey={user?.pubkey}
+              isEnabled={true}
+            />
           )}
         </CardContent>
       </Card>
