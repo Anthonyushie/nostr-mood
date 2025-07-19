@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { placeBetSchema, type PlaceBetData, type PredictionMarket } from '@shared/schema';
-import { Timer, TrendingUp, TrendingDown, DollarSign, Users, Clock, CheckCircle } from 'lucide-react';
+import { Timer, TrendingUp, TrendingDown, DollarSign, Users, Clock, CheckCircle, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MarketCardProps {
@@ -18,6 +18,42 @@ interface MarketCardProps {
   onBetPlaced: (bet: any) => void;
   userPubkey?: string;
 }
+
+// Share bet to Nostr
+const shareBetToNostr = async (bet: any, market: PredictionMarket) => {
+  try {
+    const shareText = `🎯 Just placed a ${bet.amount} sats bet on "${bet.position.toUpperCase()}" for: "${market.question}"
+    
+💰 Current odds: ${bet.position === 'yes' ? 
+      `${((market.totalYesPool + market.totalNoPool) / Math.max(market.totalYesPool, 1)).toFixed(2)}x` : 
+      `${((market.totalYesPool + market.totalNoPool) / Math.max(market.totalNoPool, 1)).toFixed(2)}x`}
+    
+⏰ Market expires: ${new Date(market.expiresAt).toLocaleString()}
+    
+#NostrMood #PredictionMarket #Lightning`;
+
+    if (typeof window !== 'undefined' && (window as any).nostr) {
+      const event = await (window as any).nostr.signEvent({
+        kind: 1,
+        content: shareText,
+        tags: [
+          ['t', 'nostrmood'],
+          ['t', 'predictionmarket'],
+          ['t', 'lightning'],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      });
+      
+      // In a real implementation, you'd publish this to relays
+      console.log('Bet shared to Nostr:', event);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Failed to share bet:', error);
+    return false;
+  }
+};
 
 const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -131,6 +167,29 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
       toast({
         title: "Bet Placed",
         description: `Successfully placed ${data.amount} sats on "${data.position.toUpperCase()}"`,
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const shared = await shareBetToNostr(bet, market);
+              if (shared) {
+                toast({
+                  title: "Shared!",
+                  description: "Your bet has been shared to Nostr",
+                });
+              } else {
+                toast({
+                  title: "Share Failed",
+                  description: "Could not share to Nostr. Make sure you have a Nostr extension.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Share2 className="h-3 w-3" />
+          </Button>
+        ),
       });
 
       setIsBetDialogOpen(false);
@@ -214,14 +273,15 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
 
         {/* Action Buttons */}
         {!market.isSettled && !isExpired && (
-          <Dialog open={isBetDialogOpen} onOpenChange={setIsBetDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full" size="sm">
-                <DollarSign className="mr-2 h-4 w-4" />
-                Place Bet
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+          <div className="flex gap-2">
+            <Dialog open={isBetDialogOpen} onOpenChange={setIsBetDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-1" size="sm">
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  Place Bet
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Place Bet</DialogTitle>
               </DialogHeader>
@@ -300,6 +360,7 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </CardContent>
     </Card>

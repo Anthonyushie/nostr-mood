@@ -30,11 +30,12 @@ const MarketCreator = ({ postId, currentSentiment, onMarketCreated, disabled }: 
       threshold: Number((currentSentiment + 0.5).toFixed(1)),
       minStake: 100,
       maxStake: 10000,
-      duration: 60,
+      duration: 1,
     },
   });
 
   const durationOptions = [
+    { value: 1, label: '1 minute (testing)' },
     { value: 5, label: '5 minutes' },
     { value: 15, label: '15 minutes' },
     { value: 30, label: '30 minutes' },

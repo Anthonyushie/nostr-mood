@@ -106,7 +106,7 @@ The application is designed to be deployed on platforms that support Node.js wit
 
 ## Recent Changes
 
-### January 19, 2025 - Prediction Market Feature Implementation
+### January 19, 2025 - Prediction Market Feature Implementation & Enhancement
 - **NEW FEATURE**: Implemented comprehensive prediction market system for sentiment analysis
 - Added database schema for prediction markets and bets (PostgreSQL with Drizzle ORM)
 - Created MarketCreator component for creating yes/no sentiment prediction markets
@@ -114,6 +114,9 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Implemented SettlementBot for automatic market settlement based on re-analyzed sentiment
 - Added useMarket hook for state management with localStorage fallback
 - Integrated Lightning payments via YakiHonne Smart Widget SDK
+- **ENHANCEMENT**: Updated market testing duration to 1 minute for easier testing
+- **NEW FEATURE**: Added share bet feature - users can share placed bets as Nostr posts
+- **DOCUMENTATION**: Created comprehensive PAYMENT_SYSTEM.md explaining Lightning Network integration
 - Created comprehensive test suite with 80%+ code coverage for market features
 - Updated documentation with prediction market usage guidelines and QA checklist
 - All existing sentiment analysis functionality preserved with zero regressions

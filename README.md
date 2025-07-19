@@ -76,9 +76,18 @@ The application will be available at `http://localhost:5000`.
 
 After analyzing a post, you can:
 1. **Create prediction markets** based on sentiment thresholds
-2. **Place bets** on whether sentiment will reach certain levels  
+2. **Place Lightning-powered bets** on whether sentiment will reach certain levels  
 3. **View live odds** that update as more bets are placed
-4. **Automatic settlement** when markets expire based on re-analyzed sentiment
+4. **Share your bets** as Nostr posts to your social network
+5. **Automatic settlement** when markets expire based on re-analyzed sentiment
+
+#### How Lightning Payments Work
+- **Fast & cheap**: Lightning Network enables instant, low-fee payments
+- **Secure**: Cryptographically verified transactions via YakiHonne SDK
+- **Easy**: Works with any Lightning wallet (Strike, Cash App, Phoenix, etc.)
+- **Automatic payouts**: Winners receive funds automatically after market settlement
+
+See [PAYMENT_SYSTEM.md](PAYMENT_SYSTEM.md) for complete payment documentation.
 
 ### YakiHonne Widget Mode
 
