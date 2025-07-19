@@ -103,3 +103,15 @@ The application connects to multiple Nostr relays:
 - Database migrations can be applied with `npm run db:push`
 
 The application is designed to be deployed on platforms that support Node.js with PostgreSQL database connectivity, with special considerations for Replit deployment through custom Vite plugins.
+
+## Recent Changes
+
+### January 19, 2025 - Migration to Replit and YakiHonne Integration
+- Successfully migrated project from Lovable to Replit environment
+- Installed missing dependencies: react-router-dom, sonner, nostr-tools, sentiment, next-themes, smart-widget-handler
+- Migrated routing from react-router-dom to wouter for Replit compatibility
+- Integrated YakiHonne Smart Widget Handler SDK for hackathon compliance
+- Added widget mode detection and user context handling
+- Implemented sharing functionality for analysis results to Nostr
+- Created comprehensive documentation and .gitignore file
+- Application now fully compatible with YakiHonne smart widget infrastructure
