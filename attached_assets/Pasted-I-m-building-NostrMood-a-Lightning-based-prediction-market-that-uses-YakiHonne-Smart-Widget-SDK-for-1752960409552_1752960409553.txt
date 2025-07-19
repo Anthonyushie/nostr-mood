@@ -1,0 +1,165 @@
+I’m building NostrMood, a Lightning-based prediction market that uses YakiHonne Smart Widget SDK for bet UI workflows—but I want to switch to Breez Nodeless (Liquid) for all Lightning payment functionality.
+
+✅ Goals
+Receive bets: Use Breez to create Lightning invoices when users place YES/NO bets.
+
+Confirm payments: Detect when invoices are settled via Breez.
+
+Send payouts: Use Breez to send winnings/refunds on market settlement.
+
+Track metadata: Record invoice/payout metadata in PostgreSQL (via Drizzle) for UI updates and audit.
+
+Maintain custody: Funds (L‑BTC/sats) remain in the user’s Breez wallet, not in our database.
+
+⚙️ Breez SDK Tasks
+Initialize Breez Nodeless SDK
+
+ts
+Copy
+Edit
+import init, { connect, defaultConfig, SdkEvent } from '@breeztech/breez-sdk-liquid/web';
+await init();
+const config = defaultConfig('testnet', process.env.BREEZ_API_KEY);
+config.workingDir = './.breez';
+const sdk = await connect({ config });
+Connect event listener for payment/listening updates. 
+BTC Transcripts
++14
+npm
++14
+YouTube
++14
+Breez SDK
++1
+SafetyCLI
++1
+GitHub
+Breez SDK
++2
+Breez SDK
++2
+GitHub
++2
+
+Create invoice on bet placement
+
+ts
+Copy
+Edit
+const { invoiceId, paymentRequest } = await sdk.receivePayment({ amount_msat: betSize * 1000 });
+// Store invoiceId, paymentRequest, `marketId`, `position`, `userPubkey`, status=’pending’
+Records invoice and metadata only. Breez holds L‑BTC internally as user funds. 
+Breez SDK
+npm
+
+Monitor invoice settlement
+
+ts
+Copy
+Edit
+sdk.addEventListener(event => {
+  if (event.type === SdkEvent.PaymentReceived && event.payment.invoiceId === invoiceId) {
+    // Update bet status in your DB, call yaki.confirmBetPlacement()
+  }
+});
+Breez informs when sats arrive (converted to L‑BTC internally). 
+Braze
++3
+Breez SDK
++3
+Zaprite
++3
+
+Fetch wallet balance
+
+ts
+Copy
+Edit
+const info = await sdk.getInfo();
+console.log({ available: info.walletInfo.balanceSat, pending: info.walletInfo.pendingReceiveSat });
+Good for UI display or enforcing minimum balances. 
+Breez SDK - Greenlight
++6
+YouTube
++6
+YouTube
++6
+Zaprite
++11
+SafetyCLI
++11
+YouTube
++11
+
+Generate payouts/refunds
+
+ts
+Copy
+Edit
+const prepareRes = await sdk.prepareSendPayment({ destination: bolt11 });
+// Show fee to user/admin if desired
+const sendRes = await sdk.sendPayment({ prepareResponse: prepareRes });
+// Record payoutTxId, status, retry logic in DB
+Per [sending payments docs], two-step flow with prepare/send calls. 
+Zaprite
++4
+Breez SDK
++4
+Breez SDK
++4
+
+Handle edge cases
+
+Expired invoices: regenerate before timeout.
+
+Payout failures: retry with exponential backoff, mark status.
+
+No winners: refund all with Breez payout logic.
+
+📂 What You Store & What Breez Holds
+Your DB stores: invoiceId, bolt11, marketId, userPubkey, position, status, timestamps, payoutTxId, retries.
+
+Breez wallet (user-local) stores: actual funds in L‑BTC, pending/available sats, invoice/payout states. Self‑custodial—keys on-device. 
+SafetyCLI
++2
+Breez SDK - Greenlight
++2
+Breez SDK
++2
+YouTube
++7
+npm
++7
+Braze
++7
+GitHub
++2
+Breez SDK
++2
+Breez SDK
++2
+
+📄 Tech Stack
+Frontend: React + YakiHonne SDK
+
+Backend: Node.js or Next.js (API routes)
+
+DB: PostgreSQL via Drizzle
+
+Lightning: Breez Nodeless (Testnet → Mainnet)
+
+💬 Deliverables Requested
+Full JS/TS code snippets: initialization, invoice creation, event listener, payout flows.
+
+Sample Drizzle ORM schema for storing invoice/payout metadata.
+
+Error handling examples: invoice expiry, failed payouts.
+
+Integration hooks: replacing YakiHonne’s invoice workflow with Breez implementation while calling Yaki methods for UI updates.
+
+🎯 Why This Matters
+The user retains custody of funds in their Breez L‑BTC wallet—your app never holds sats.
+
+Your DB only tracks metadata, not actual balances.
+
+Breez handles complex Lightning/Liquid swaps automatically while you orchestrate UI/market logic.
