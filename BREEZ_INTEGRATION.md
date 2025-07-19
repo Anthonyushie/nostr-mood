@@ -237,32 +237,16 @@ When `BREEZ_API_KEY` is not provided:
 - Rate limiting (recommended for production)
 - Error message sanitization
 
-## Deployment Guide
-
-### Vercel Deployment
-
-######################
-
-1. Set environment variables in Vercel dashboard:
-   ```
-   BREEZ_API_KEY=your_api_key
-   DATABASE_URL=your_postgresql_url (optional)
-   ```
-
-######################
-
-2. Deploy normally - Breez SDK works in serverless environments
-
-######################
-
-### Production Checklist
+## Production Checklist
 - [ ] Add real Breez API key
-- [ ] Configure PostgreSQL database
+- [ ] Configure PostgreSQL database (optional)
 - [ ] Set up proper error monitoring
 - [ ] Enable rate limiting
 - [ ] Configure webhook endpoints (if needed)
 - [ ] Test payout mechanisms
 - [ ] Monitor invoice expiry handling
+
+For deployment instructions, see `VERCEL_DEPLOYMENT.md`.
 
 ## Testing
 
