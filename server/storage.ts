@@ -55,6 +55,35 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     this.currentMarketId = 1;
     this.currentBetId = 1;
+    
+    // Initialize with a test market for development
+    this.initializeTestData();
+  }
+  
+  private initializeTestData() {
+    // Create a test market
+    const testMarket: PredictionMarket = {
+      id: 1,
+      postId: 'test_post_123',
+      question: 'Will Bitcoin reach $100k by end of 2025?',
+      threshold: 0.5,
+      minStake: 100,
+      maxStake: 10000,
+      duration: 60, // 1 hour
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+      isSettled: false,
+      settlementResult: null,
+      creatorPubkey: 'test_creator',
+      totalYesPool: 0,
+      totalNoPool: 0,
+      feePercentage: 5.0,
+    };
+    
+    this.markets.set(1, testMarket);
+    this.currentMarketId = 2; // Next ID
+    
+    console.log('✓ Test market initialized for development');
   }
 
   // User methods

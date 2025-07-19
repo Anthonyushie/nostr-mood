@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { breezService } from "./breezService";
-import { insertPredictionBetSchema, placeBetSchema, insertPredictionMarketSchema } from "../shared/schema";
+import { insertPredictionBetSchema, placeBetSchema, insertPredictionMarketSchema, createMarketSchema, type InsertPredictionMarket } from "../shared/schema";
 // Note: SdkEvent might not be available in web version, using string literals
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -26,8 +26,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create prediction market
   app.post("/api/markets", async (req, res) => {
     try {
-      const validatedData = insertPredictionMarketSchema.parse(req.body);
-      const market = await storage.createPredictionMarket(validatedData);
+      // Use the client-side schema for validation, then add server fields
+      const clientData = createMarketSchema.parse(req.body);
+      
+      // Add server-side fields that are auto-generated or have defaults
+      const marketData: InsertPredictionMarket = {
+        ...clientData,
+        postId: req.body.postId || `generated_${Date.now()}`,
+        creatorPubkey: req.body.creatorPubkey || 'anonymous',
+        expiresAt: new Date(Date.now() + clientData.duration * 60 * 1000), // duration in minutes
+        feePercentage: clientData.feePercentage || 5.0
+      };
+      
+      const market = await storage.createPredictionMarket(marketData);
       res.json(market);
     } catch (error) {
       console.error('Error creating market:', error);

@@ -87,7 +87,8 @@ export const createMarketSchema = z.object({
   threshold: z.number().min(-10).max(10),
   minStake: z.number().min(1).max(1000000),
   maxStake: z.number().min(1).max(1000000),
-  duration: z.number().min(5).max(1440), // 5 minutes to 24 hours
+  duration: z.number().min(1).max(1440), // 1 minute to 24 hours (for easier testing)
+  feePercentage: z.number().min(0).max(20).optional().default(5.0),
 }).refine(data => data.maxStake >= data.minStake, {
   message: "Maximum stake must be greater than or equal to minimum stake",
   path: ["maxStake"],
