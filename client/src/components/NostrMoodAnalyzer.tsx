@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus, User } from 'lucide-react';
 import { SimplePool, Event, nip19 } from 'nostr-tools';
 import Sentiment from 'sentiment';
+import SWHandler from 'smart-widget-handler';
 
 interface SentimentResult {
   score: number;
@@ -25,13 +26,66 @@ interface AnalysisResult {
   postId: string;
 }
 
+interface UserProfile {
+  pubkey?: string;
+  display_name?: string;
+  name?: string;
+  picture?: string;
+  banner?: string;
+  nip05?: string;
+  lud16?: string;
+  lud06?: string;
+  website?: string;
+  hasWallet?: boolean;
+}
+
 const NostrMoodAnalyzer = () => {
   const [postId, setPostId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isWidgetMode, setIsWidgetMode] = useState(false);
   const { toast } = useToast();
 
   const sentiment = new Sentiment();
+
+  // Initialize YakiHonne Smart Widget Handler
+  useEffect(() => {
+    // Check if we're running inside an iframe (widget mode)
+    const inIframe = window.self !== window.top;
+    
+    if (inIframe) {
+      setIsWidgetMode(true);
+      
+      // Notify parent that widget is ready
+      SWHandler.client.ready();
+
+      // Listen for messages from parent (YakiHonne host)
+      const listener = SWHandler.client.listen((data) => {
+        console.log('Received message from YakiHonne host:', data);
+
+        if (data.kind === 'user-metadata') {
+          setUser(data.data.user);
+          toast({
+            title: "Connected to YakiHonne",
+            description: `Welcome ${data.data.user.display_name || data.data.user.name || 'User'}!`,
+          });
+        } else if (data.kind === 'nostr-event' && data.data.status === 'success') {
+          // Handle signed events if needed
+          console.log('Received signed event:', data.data.event);
+        } else if (data.kind === 'error') {
+          toast({
+            title: "Error",
+            description: data.data.message || 'An error occurred',
+            variant: "destructive",
+          });
+        }
+      });
+
+      // Cleanup listener on unmount
+      return () => listener.close();
+    }
+  }, [toast]);
 
   const relays = [
     'wss://relay.damus.io',
@@ -164,6 +218,40 @@ const NostrMoodAnalyzer = () => {
     return <Minus className="h-4 w-4" />;
   };
 
+  const shareAnalysis = () => {
+    if (!result || !isWidgetMode) return;
+
+    const analysisText = `I analyzed a Nostr post with NostrMood! 
+
+Sentiment: ${getSentimentLabel(result.sentiment.score)} (${result.sentiment.score > 0 ? '+' : ''}${result.sentiment.score})
+
+Original post: "${result.postContent.slice(0, 100)}${result.postContent.length > 100 ? '...' : ''}"
+
+#NostrMood #SentimentAnalysis #Nostr`;
+
+    const eventDraft = {
+      content: analysisText,
+      tags: [['t', 'nostrmood'], ['t', 'sentiment'], ['t', 'analysis']],
+      kind: 1
+    };
+
+    // Request YakiHonne to publish the analysis
+    try {
+      SWHandler.client.requestEventPublish(eventDraft, window.location.ancestorOrigins?.[0] || '*');
+      toast({
+        title: "Sharing Analysis",
+        description: "Requesting to publish your sentiment analysis...",
+      });
+    } catch (error) {
+      console.error('Error sharing analysis:', error);
+      toast({
+        title: "Share Failed",
+        description: "Could not share the analysis. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 p-2">
       <Card className="border-border bg-card shadow-[var(--shadow-card)]">
@@ -172,8 +260,14 @@ const NostrMoodAnalyzer = () => {
             NostrMood
           </CardTitle>
           <CardDescription className="text-base md:text-lg">
-            Analyze sentiment of Nostr posts
+            {isWidgetMode ? 'YakiHonne Smart Widget - ' : ''}Analyze sentiment of Nostr posts
           </CardDescription>
+          {isWidgetMode && user && (
+            <div className="flex items-center justify-center gap-2 mt-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>Connected as {user.display_name || user.name || 'User'}</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-2">
@@ -276,6 +370,19 @@ const NostrMoodAnalyzer = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {isWidgetMode && user && (
+                  <div className="pt-2 border-t border-border">
+                    <Button 
+                      onClick={shareAnalysis}
+                      className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
+                      size="sm"
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Share Analysis on Nostr
+                    </Button>
                   </div>
                 )}
               </CardContent>

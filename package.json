@@ -69,6 +69,7 @@
     "react-router-dom": "^7.7.0",
     "recharts": "^2.15.2",
     "sentiment": "^5.0.2",
+    "smart-widget-handler": "^1.0.34",
     "sonner": "^2.0.6",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
