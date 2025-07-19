@@ -33,10 +33,20 @@ export const predictionBets = pgTable("prediction_bets", {
   position: text("position").notNull(), // "yes" or "no"
   amount: integer("amount").notNull(), // in sats
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  paymentHash: text("payment_hash").notNull(),
+  // Breez payment tracking
+  invoiceId: text("invoice_id"),
+  paymentRequest: text("payment_request"), // bolt11 invoice
+  paymentHash: text("payment_hash"),
   isPaid: boolean("is_paid").default(false).notNull(),
   isSettled: boolean("is_settled").default(false).notNull(),
   payout: integer("payout").default(0).notNull(),
+  // Payout tracking
+  payoutInvoice: text("payout_invoice"), // bolt11 from winner
+  payoutTxId: text("payout_tx_id"),
+  payoutStatus: text("payout_status").default("pending"), // pending, completed, failed
+  payoutRetries: integer("payout_retries").default(0),
+  payoutError: text("payout_error"),
+  expiresAt: timestamp("expires_at"), // invoice expiry
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -58,6 +68,10 @@ export const insertPredictionBetSchema = createInsertSchema(predictionBets).omit
   createdAt: true,
   isSettled: true,
   payout: true,
+  payoutTxId: true,
+  payoutStatus: true,
+  payoutRetries: true,
+  payoutError: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

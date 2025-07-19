@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { placeBetSchema, type PlaceBetData, type PredictionMarket } from '@shared/schema';
-import { Timer, TrendingUp, TrendingDown, DollarSign, Users, Clock, CheckCircle, Share2 } from 'lucide-react';
+import { Timer, TrendingUp, TrendingDown, DollarSign, Users, Clock, CheckCircle, Share2, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BreezPaymentModal } from './BreezPaymentModal';
+import { useBreezPayments } from '@/hooks/useBreezPayments';
 
 interface MarketCardProps {
   market: PredictionMarket;
@@ -58,9 +59,11 @@ const shareBetToNostr = async (bet: any, market: PredictionMarket) => {
 const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpired, setIsExpired] = useState(false);
-  const [isBetDialogOpen, setIsBetDialogOpen] = useState(false);
-  const [isPlacingBet, setIsPlacingBet] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState<'yes' | 'no'>('yes');
+  const [betAmount, setBetAmount] = useState(market.minStake);
   const { toast } = useToast();
+  const { balance } = useBreezPayments();
 
   const form = useForm<PlaceBetData>({
     resolver: zodResolver(placeBetSchema),
@@ -108,102 +111,37 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
     return () => clearInterval(interval);
   }, [market.expiresAt]);
 
-  const onSubmit = async (data: PlaceBetData) => {
-    if (!userPubkey) {
-      toast({
-        title: "Authentication Required",
-        description: "Please connect your wallet to place bets",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (data.amount < market.minStake || data.amount > market.maxStake) {
-      toast({
-        title: "Invalid Amount",
-        description: `Stake must be between ${market.minStake} and ${market.maxStake} sats`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsPlacingBet(true);
-    try {
-      // Simulate Lightning payment (in real app, this would use YakiHonne payment API)
-      const paymentHash = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const bet = {
-        id: Date.now(),
-        marketId: market.id,
-        userPubkey,
-        position: data.position,
-        amount: data.amount,
-        createdAt: new Date().toISOString(),
-        paymentHash,
-        isPaid: true, // Simulated successful payment
-        isSettled: false,
-        payout: 0,
-      };
-
-      // Store bet in localStorage
-      const bets = JSON.parse(localStorage.getItem('predictionBets') || '[]');
-      bets.push(bet);
-      localStorage.setItem('predictionBets', JSON.stringify(bets));
-
-      // Update market pools
-      const markets = JSON.parse(localStorage.getItem('predictionMarkets') || '[]');
-      const marketIndex = markets.findIndex((m: any) => m.id === market.id);
-      if (marketIndex !== -1) {
-        if (data.position === 'yes') {
-          markets[marketIndex].totalYesPool += data.amount;
-        } else {
-          markets[marketIndex].totalNoPool += data.amount;
-        }
-        localStorage.setItem('predictionMarkets', JSON.stringify(markets));
-      }
-
-      onBetPlaced(bet);
-      
-      toast({
-        title: "Bet Placed",
-        description: `Successfully placed ${data.amount} sats on "${data.position.toUpperCase()}"`,
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              const shared = await shareBetToNostr(bet, market);
-              if (shared) {
-                toast({
-                  title: "Shared!",
-                  description: "Your bet has been shared to Nostr",
-                });
-              } else {
-                toast({
-                  title: "Share Failed",
-                  description: "Could not share to Nostr. Make sure you have a Nostr extension.",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            <Share2 className="h-3 w-3" />
-          </Button>
-        ),
-      });
-
-      setIsBetDialogOpen(false);
-      form.reset({ marketId: market.id, position: 'yes', amount: market.minStake });
-    } catch (error) {
-      console.error('Error placing bet:', error);
-      toast({
-        title: "Bet Failed",
-        description: "Failed to place bet. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPlacingBet(false);
-    }
+  // Handle bet placement callback from payment modal
+  const handleBetPlaced = (bet: any) => {
+    onBetPlaced(bet);
+    
+    toast({
+      title: "Bet Confirmed",
+      description: `Successfully placed ${bet.amount} sats on "${bet.position.toUpperCase()}"`,
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            const shared = await shareBetToNostr(bet, market);
+            if (shared) {
+              toast({
+                title: "Shared!",
+                description: "Your bet has been shared to Nostr",
+              });
+            } else {
+              toast({
+                title: "Share Failed",
+                description: "Could not share to Nostr. Make sure you have a Nostr extension.",
+                variant: "destructive",
+              });
+            }
+          }}
+        >
+          <Share2 className="h-3 w-3" />
+        </Button>
+      ),
+    });
   };
 
   return (
@@ -274,94 +212,53 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
         {/* Action Buttons */}
         {!market.isSettled && !isExpired && (
           <div className="flex gap-2">
-            <Dialog open={isBetDialogOpen} onOpenChange={setIsBetDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-1" size="sm">
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Place Bet
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Place Bet</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="position"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Position</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select position" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="yes">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4 text-green-500" />
-                                YES ({yesOdds.toFixed(2)}x)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="no">
-                              <div className="flex items-center gap-2">
-                                <TrendingDown className="h-4 w-4 text-red-500" />
-                                NO ({noOdds.toFixed(2)}x)
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (sats)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder={market.minStake.toString()}
-                            min={market.minStake}
-                            max={market.maxStake}
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-muted-foreground">
-                          Min: {market.minStake} sats, Max: {market.maxStake} sats
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsBetDialogOpen(false)}
-                      disabled={isPlacingBet}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isPlacingBet}>
-                      {isPlacingBet ? 'Placing...' : 'Place Bet'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+            <Button 
+              className="flex-1" 
+              size="sm"
+              onClick={() => {
+                setSelectedPosition('yes');
+                setBetAmount(market.minStake);
+                setIsPaymentModalOpen(true);
+              }}
+            >
+              <TrendingUp className="mr-2 h-4 w-4" />
+              YES ({yesOdds.toFixed(2)}x)
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              size="sm"
+              onClick={() => {
+                setSelectedPosition('no');
+                setBetAmount(market.minStake);
+                setIsPaymentModalOpen(true);
+              }}
+            >
+              <TrendingDown className="mr-2 h-4 w-4" />
+              NO ({noOdds.toFixed(2)}x)
+            </Button>
           </div>
         )}
+
+        {/* Wallet Balance Display */}
+        {balance && (
+          <div className="text-xs text-muted-foreground text-center">
+            <Zap className="inline h-3 w-3 mr-1" />
+            Wallet: {balance.availableBalanceSat} sats
+            {balance.pendingReceiveSat > 0 && ` (${balance.pendingReceiveSat} pending)`}
+          </div>
+        )}
+
+        {/* Breez Payment Modal */}
+        <BreezPaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          marketId={market.id}
+          marketQuestion={market.question}
+          position={selectedPosition}
+          amount={betAmount}
+          userPubkey={userPubkey}
+        />
       </CardContent>
     </Card>
   );

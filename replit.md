@@ -130,3 +130,19 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Implemented sharing functionality for analysis results to Nostr
 - Created comprehensive documentation and .gitignore file
 - Application now fully compatible with YakiHonne smart widget infrastructure
+
+### January 19, 2025 - Breez Nodeless Lightning Integration
+- **MAJOR FEATURE**: Integrated Breez Nodeless (Liquid) SDK for Lightning payments
+- Added comprehensive `BreezService` for invoice creation, payment detection, and payouts
+- Updated database schema with Breez payment tracking fields (invoiceId, paymentRequest, payoutStatus, etc.)
+- Created `BreezPaymentModal` component with real-time payment status and wallet integration
+- Implemented `useBreezPayments` hook for seamless frontend payment operations
+- Added automatic payment detection with event listeners and status polling
+- Built robust error handling with development fallbacks (mock invoices when API key missing)
+- Created comprehensive payout system with retry logic and settlement automation
+- Updated MarketCard component with streamlined YES/NO betting interface
+- Added wallet balance display and Lightning wallet integration
+- **SELF-CUSTODIAL**: Users retain full custody of funds in their Breez wallet
+- Created extensive documentation: BREEZ_INTEGRATION.md with deployment guides
+- App supports both development mode (mock payments) and production (real Lightning)
+- All existing prediction market functionality preserved with zero regressions

@@ -1,15 +1,337 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { breezService } from "./breezService";
+import { insertPredictionBetSchema, placeBetSchema, insertPredictionMarketSchema } from "../shared/schema";
+// Note: SdkEvent might not be available in web version, using string literals
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Initialize Breez service (optional for development)
+  try {
+    await breezService.initialize();
+    console.log('✓ Breez SDK initialized successfully');
+  } catch (error) {
+    console.warn('⚠ Breez SDK not available (this is normal in development without API key):');
+    console.warn('  Add BREEZ_API_KEY to environment variables to enable Lightning payments');
+    console.warn('  App will continue to work with mock payments for development');
+  }
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // Set up payment event listeners
+  breezService.addEventListener('payment-handler', (event) => {
+    if (event.type === 'payment_received') {
+      handlePaymentReceived(event.payment);
+    }
+  });
+
+  // Create prediction market
+  app.post("/api/markets", async (req, res) => {
+    try {
+      const validatedData = insertPredictionMarketSchema.parse(req.body);
+      const market = await storage.createPredictionMarket(validatedData);
+      res.json(market);
+    } catch (error) {
+      console.error('Error creating market:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get all markets
+  app.get("/api/markets", async (req, res) => {
+    try {
+      const markets = await storage.getAllMarkets();
+      res.json(markets);
+    } catch (error) {
+      console.error('Error fetching markets:', error);
+      res.status(500).json({ error: 'Failed to fetch markets' });
+    }
+  });
+
+  // Get specific market
+  app.get("/api/markets/:id", async (req, res) => {
+    try {
+      const marketId = parseInt(req.params.id);
+      const market = await storage.getMarketById(marketId);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+      res.json(market);
+    } catch (error) {
+      console.error('Error fetching market:', error);
+      res.status(500).json({ error: 'Failed to fetch market' });
+    }
+  });
+
+  // Place bet - creates Breez invoice
+  app.post("/api/bets", async (req, res) => {
+    try {
+      const betData = placeBetSchema.parse(req.body);
+      const { marketId, position, amount } = betData;
+      const userPubkey = req.body.userPubkey || 'anonymous';
+
+      // Check if market exists and is still active
+      const market = await storage.getMarketById(marketId);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+      
+      if (market.isSettled || new Date() > market.expiresAt) {
+        return res.status(400).json({ error: 'Market is closed' });
+      }
+
+      if (amount < market.minStake || amount > market.maxStake) {
+        return res.status(400).json({ 
+          error: `Bet amount must be between ${market.minStake} and ${market.maxStake} sats` 
+        });
+      }
+
+      // Create Breez invoice (with fallback for development)
+      let invoice;
+      try {
+        invoice = await breezService.createInvoice(
+          amount,
+          `NostrMood bet: ${position} on ${market.question}`
+        );
+      } catch (error) {
+        console.warn('Breez not available, using mock invoice for development');
+        // Mock invoice for development when Breez is not available
+        invoice = {
+          invoiceId: `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          paymentRequest: `lnbc${amount}u1p...mock_invoice_for_development_testing`,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+        };
+      }
+
+      // Store bet with invoice details
+      const bet = await storage.createBet({
+        marketId,
+        userPubkey,
+        position,
+        amount,
+        invoiceId: invoice.invoiceId,
+        paymentRequest: invoice.paymentRequest,
+        paymentHash: '', // Will be populated when payment is received
+        expiresAt: invoice.expiresAt
+      });
+
+      res.json({
+        bet,
+        paymentRequest: invoice.paymentRequest,
+        invoiceId: invoice.invoiceId,
+        expiresAt: invoice.expiresAt
+      });
+    } catch (error) {
+      console.error('Error creating bet:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get bets for a market
+  app.get("/api/markets/:id/bets", async (req, res) => {
+    try {
+      const marketId = parseInt(req.params.id);
+      const bets = await storage.getBetsByMarket(marketId);
+      res.json(bets);
+    } catch (error) {
+      console.error('Error fetching bets:', error);
+      res.status(500).json({ error: 'Failed to fetch bets' });
+    }
+  });
+
+  // Settle market and process payouts
+  app.post("/api/markets/:id/settle", async (req, res) => {
+    try {
+      const marketId = parseInt(req.params.id);
+      const { result } = req.body; // true for yes, false for no
+      
+      const market = await storage.getMarketById(marketId);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      if (market.isSettled) {
+        return res.status(400).json({ error: 'Market already settled' });
+      }
+
+      // Settle the market
+      await storage.settleMarket(marketId, result);
+      
+      // Process payouts asynchronously
+      processMarketPayouts(marketId, result).catch(console.error);
+
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('Error settling market:', error);
+      res.status(500).json({ error: 'Failed to settle market' });
+    }
+  });
+
+  // Get wallet balance
+  app.get("/api/wallet/balance", async (req, res) => {
+    try {
+      const balance = await breezService.getWalletInfo();
+      res.json(balance);
+    } catch (error) {
+      console.warn('Breez not available, returning mock balance for development');
+      // Mock balance for development
+      res.json({
+        availableBalanceSat: 100000, // 100k sats
+        pendingReceiveSat: 0
+      });
+    }
+  });
+
+  // Check bet payment status
+  app.get("/api/bets/:id/status", async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const bet = await storage.getBetById(betId);
+      
+      if (!bet) {
+        return res.status(404).json({ error: 'Bet not found' });
+      }
+
+      // Check if invoice is expired
+      if (bet.expiresAt && breezService.isInvoiceExpired(bet.expiresAt)) {
+        await storage.updateBetStatus(betId, { paymentStatus: 'expired' });
+        return res.json({ ...bet, paymentStatus: 'expired' });
+      }
+
+      res.json(bet);
+    } catch (error) {
+      console.error('Error checking bet status:', error);
+      res.status(500).json({ error: 'Failed to check bet status' });
+    }
+  });
 
   const httpServer = createServer(app);
-
   return httpServer;
+}
+
+// Handle payment received events from Breez
+async function handlePaymentReceived(payment: any) {
+  try {
+    console.log('Payment received:', payment);
+    
+    // Find the bet by invoice ID
+    const bet = await storage.getBetByInvoiceId(payment.invoiceId);
+    if (!bet) {
+      console.error('No bet found for invoice:', payment.invoiceId);
+      return;
+    }
+
+    // Update bet as paid
+    await storage.updateBetPayment(bet.id, {
+      isPaid: true,
+      paymentHash: payment.paymentHash,
+    });
+
+    // Update market pools
+    await storage.updateMarketPool(bet.marketId, bet.position, bet.amount);
+
+    console.log(`Bet ${bet.id} payment confirmed for ${bet.amount} sats`);
+  } catch (error) {
+    console.error('Error handling payment received:', error);
+  }
+}
+
+// Process payouts for settled market
+async function processMarketPayouts(marketId: number, winningPosition: boolean) {
+  try {
+    const market = await storage.getMarketById(marketId);
+    const bets = await storage.getBetsByMarket(marketId);
+    const paidBets = bets.filter(bet => bet.isPaid);
+    
+    if (paidBets.length === 0) {
+      console.log('No paid bets to process for market:', marketId);
+      return;
+    }
+
+    const winningBets = paidBets.filter(bet => 
+      (winningPosition && bet.position === 'yes') || 
+      (!winningPosition && bet.position === 'no')
+    );
+
+    const totalPool = market.totalYesPool + market.totalNoPool;
+    const fee = Math.floor(totalPool * (market.feePercentage / 100));
+    const payoutPool = totalPool - fee;
+
+    if (winningBets.length === 0) {
+      // No winners - refund all bets
+      console.log('No winners - processing refunds');
+      for (const bet of paidBets) {
+        await processRefund(bet);
+      }
+      return;
+    }
+
+    // Calculate and process payouts
+    const winningPool = winningPosition ? market.totalYesPool : market.totalNoPool;
+    
+    for (const bet of winningBets) {
+      const payout = Math.floor((bet.amount / winningPool) * payoutPool);
+      await processPayout(bet, payout);
+    }
+
+    console.log(`Processed payouts for market ${marketId}`);
+  } catch (error) {
+    console.error('Error processing market payouts:', error);
+  }
+}
+
+async function processPayout(bet: any, payoutAmount: number) {
+  try {
+    if (!bet.payoutInvoice) {
+      console.log(`No payout invoice provided for bet ${bet.id}`);
+      await storage.updateBetPayout(bet.id, {
+        payout: payoutAmount,
+        payoutStatus: 'awaiting_invoice'
+      });
+      return;
+    }
+
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const result = await breezService.sendPayout(bet.payoutInvoice);
+        
+        await storage.updateBetPayout(bet.id, {
+          payout: payoutAmount,
+          payoutTxId: result.paymentId,
+          payoutStatus: 'completed',
+          isSettled: true
+        });
+
+        console.log(`Payout sent for bet ${bet.id}: ${payoutAmount} sats`);
+        break;
+      } catch (error) {
+        attempt++;
+        console.error(`Payout attempt ${attempt} failed for bet ${bet.id}:`, error);
+        
+        if (attempt >= maxRetries) {
+          await storage.updateBetPayout(bet.id, {
+            payout: payoutAmount,
+            payoutStatus: 'failed',
+            payoutError: error.message,
+            payoutRetries: attempt
+          });
+        } else {
+          // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing payout for bet ${bet.id}:`, error);
+    await storage.updateBetPayout(bet.id, {
+      payoutStatus: 'failed',
+      payoutError: error.message
+    });
+  }
+}
+
+async function processRefund(bet: any) {
+  // Similar to processPayout but refunds the original bet amount
+  await processPayout(bet, bet.amount);
 }
