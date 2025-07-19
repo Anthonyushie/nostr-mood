@@ -240,13 +240,20 @@ When `BREEZ_API_KEY` is not provided:
 ## Deployment Guide
 
 ### Vercel Deployment
+
+######################
+
 1. Set environment variables in Vercel dashboard:
    ```
    BREEZ_API_KEY=your_api_key
    DATABASE_URL=your_postgresql_url (optional)
    ```
 
+######################
+
 2. Deploy normally - Breez SDK works in serverless environments
+
+######################
 
 ### Production Checklist
 - [ ] Add real Breez API key
