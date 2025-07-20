@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// In-memory storage for Vercel (this would normally be a database)
-const markets = [
+// Mock data for Vercel deployment (would normally be a database)
+const getMarkets = () => [
   {
     id: 1,
     postId: 'test_post_123',
@@ -10,8 +10,8 @@ const markets = [
     minStake: 100,
     maxStake: 10000,
     duration: 60,
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     isSettled: false,
     settlementResult: null,
     creatorPubkey: 'test_creator',
@@ -33,6 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
+    const markets = getMarkets();
+    console.log('Serving markets:', markets);
     res.json(markets);
   } else {
     res.status(405).json({ error: 'Method not allowed' });

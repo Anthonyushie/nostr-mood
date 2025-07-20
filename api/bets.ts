@@ -16,8 +16,8 @@ const placeBetSchema = {
   }
 };
 
-// In-memory storage for Vercel (this would normally be a database)
-let markets = [
+// Mock data for Vercel deployment (would normally be a database)
+const getMarkets = () => [
   {
     id: 1,
     postId: 'test_post_123',
@@ -26,8 +26,8 @@ let markets = [
     minStake: 100,
     maxStake: 10000,
     duration: 60,
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     isSettled: false,
     settlementResult: null,
     creatorPubkey: 'test_creator',
@@ -37,8 +37,8 @@ let markets = [
   }
 ];
 
-let bets = [];
-let currentBetId = 1;
+// Generate a random bet ID for each request (simulating database auto-increment)
+const generateBetId = () => Math.floor(Math.random() * 1000000);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -59,12 +59,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userPubkey = req.body.userPubkey || 'anonymous';
 
       // Check if market exists and is still active
+      const markets = getMarkets();
       const market = markets.find(m => m.id === marketId);
+      
+      console.log('Available markets:', markets.map(m => ({ id: m.id, question: m.question })));
+      console.log('Looking for market ID:', marketId);
+      
       if (!market) {
         return res.status(404).json({ error: 'Market not found' });
       }
       
-      if (market.isSettled || new Date() > market.expiresAt) {
+      if (market.isSettled || new Date() > new Date(market.expiresAt)) {
         return res.status(400).json({ error: 'Market is closed' });
       }
 
@@ -81,9 +86,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
       };
 
-      // Store bet with invoice details
+      // Create bet with invoice details (mock storage for Vercel)
       const bet = {
-        id: currentBetId++,
+        id: generateBetId(),
         marketId,
         userPubkey,
         position,
@@ -92,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         paymentRequest: invoice.paymentRequest,
         paymentHash: '',
         expiresAt: invoice.expiresAt,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
         isPaid: false,
         isSettled: false,
         payout: 0,
@@ -103,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         payoutInvoice: null,
       };
 
-      bets.push(bet);
+      console.log('Created bet:', bet);
 
       const response = {
         bet,
