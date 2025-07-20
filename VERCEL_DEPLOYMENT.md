@@ -11,7 +11,8 @@
 3. Add the following variables:
 
 ```
-BREEZ_API_KEY=your_breez_api_key_here
+OPENAI_API_KEY=sk-your-openai-api-key-here
+NWC_CONNECTION_STRING=nostr+walletconnect://your-connection-string (optional)
 DATABASE_URL=your_postgresql_connection_string (optional)
 NODE_ENV=production
 ```
@@ -44,14 +45,24 @@ If you want to use PostgreSQL instead of memory storage:
 
 ######################
 
-## Breez API Key Setup
+## OpenAI API Key Setup
 
 ######################
 
-1. Sign up for Breez Developer Account
-2. Generate your API key for testnet or mainnet
-3. Add `BREEZ_API_KEY` to Vercel environment variables
-4. Without this key, the app runs in development mode with mock payments
+1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Create an account and add billing credits (minimum $5)
+3. Generate a new API key (starts with `sk-`)
+4. Add `OPENAI_API_KEY` to Vercel environment variables
+5. Without this key, ChatGPT features will be disabled
+
+## NWC Lightning Setup (Optional)
+
+######################
+
+1. Get a Nostr Wallet Connect connection string from a compatible wallet
+2. Examples: Alby, Zeus, Mutiny, Phoenix
+3. Add `NWC_CONNECTION_STRING` to Vercel environment variables
+4. Without this, the app uses mock Lightning payments for demo
 
 ######################
 
