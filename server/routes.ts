@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { nwcService } from "./nwcService";
 import { insertPredictionBetSchema, placeBetSchema, insertPredictionMarketSchema, createMarketSchema, type InsertPredictionMarket } from "../shared/schema";
+import OpenAI from 'openai';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize NWC service (optional for development)
@@ -233,6 +234,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error in test API:', error);
       res.status(500).json({ error: 'Test API failed' });
+    }
+  });
+
+  // Initialize OpenAI client
+  let openai: OpenAI | null = null;
+  const initializeOpenAI = () => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      openai = new OpenAI({ apiKey });
+      return true;
+    }
+    return false;
+  };
+  initializeOpenAI();
+
+  // ChatGPT API routes
+  app.get('/api/chatgpt/check', (req, res) => {
+    const hasApiKey = !!process.env.OPENAI_API_KEY && !!openai;
+    res.json({ hasApiKey });
+  });
+
+  app.post('/api/chatgpt/chat', async (req, res) => {
+    try {
+      if (!openai) {
+        const initialized = initializeOpenAI();
+        if (!initialized) {
+          return res.status(400).json({ 
+            error: 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.' 
+          });
+        }
+      }
+
+      const { messages, context } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: 'Messages array is required' });
+      }
+
+      // Create system message with context
+      const systemMessage = {
+        role: 'system' as const,
+        content: `You are an AI assistant integrated into NostrMood, a Lightning-powered prediction market app that analyzes sentiment of Nostr posts. 
+
+Key features of NostrMood:
+- Analyzes sentiment of Nostr social media posts
+- Users can bet on whether posts are positive/negative
+- Uses Lightning Network for instant payments
+- Threshold for positive sentiment: > 0.6
+- Threshold for negative sentiment: ≤ 0.6
+
+Your role:
+- Provide insights about sentiment analysis results
+- Suggest trading strategies for prediction markets
+- Explain sentiment patterns and market psychology
+- Help users understand their analysis results
+- Be helpful, accurate, and focused on sentiment/trading topics
+
+${context?.analysisResult ? `
+Current Analysis Context:
+- Post content: "${context.postContent}"
+- Sentiment score: ${context.analysisResult.sentiment.comparative}
+- Classification: ${context.analysisResult.sentiment.comparative > 0.6 ? 'Positive' : context.analysisResult.sentiment.comparative < -0.6 ? 'Negative' : 'Neutral'}
+- Positive words: ${context.analysisResult.sentiment.positive.join(', ') || 'None'}
+- Negative words: ${context.analysisResult.sentiment.negative.join(', ') || 'None'}
+` : ''}
+
+Keep responses helpful, concise, and relevant to sentiment analysis and prediction markets.`
+      };
+
+      const completion = await openai!.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [systemMessage, ...messages],
+        max_tokens: 500,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+
+      if (!response) {
+        return res.status(500).json({ error: 'No response from OpenAI' });
+      }
+
+      res.json({ response });
+
+    } catch (error) {
+      console.error('ChatGPT API error:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          return res.status(401).json({ error: 'Invalid OpenAI API key' });
+        }
+        if (error.message.includes('quota')) {
+          return res.status(429).json({ error: 'OpenAI API quota exceeded' });
+        }
+        if (error.message.includes('rate limit')) {
+          return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+        }
+      }
+
+      res.status(500).json({ 
+        error: 'Failed to get response from ChatGPT. Please try again.' 
+      });
     }
   });
 

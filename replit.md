@@ -217,3 +217,15 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Added detailed technical architecture documentation and deployment instructions
 - Improved user onboarding with clear explanations of betting mechanics and payout calculations
 - All documentation integrated into main README for centralized project information
+
+### July 20, 2025 - ChatGPT AI Integration
+- **MAJOR FEATURE**: Integrated ChatGPT AI assistant for intelligent sentiment analysis insights
+- Added comprehensive AI-powered chat interface with contextual understanding of analysis results
+- Created specialized ChatGPT prompts for sentiment analysis, market psychology, and trading strategies
+- Built real-time chat system with automatic context loading from current analysis
+- Implemented OpenAI API integration with proper error handling and rate limiting
+- Added quick prompt suggestions for common user questions about sentiment and markets
+- **EDUCATIONAL ENHANCEMENT**: AI explains sentiment patterns and provides trading strategy recommendations
+- Created CHATGPT_INTEGRATION.md with comprehensive setup and usage documentation
+- Enhanced user experience with instant AI guidance and explanations
+- **COST OPTIMIZED**: Efficient token usage and response limiting for affordable operation
