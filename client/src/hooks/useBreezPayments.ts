@@ -26,6 +26,7 @@ export function useBreezPayments() {
     setIsLoading(true);
     try {
       console.log('Creating bet:', { marketId, position, amount, userPubkey });
+      console.log('MarketId type:', typeof marketId, 'value:', marketId);
       
       const response = await fetch('/api/bets', {
         method: 'POST',

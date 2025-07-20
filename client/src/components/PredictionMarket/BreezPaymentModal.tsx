@@ -86,6 +86,10 @@ export function BreezPaymentModal({
 
   const handleCreateInvoice = async () => {
     try {
+      console.log('Creating invoice for:', { marketId, position, amount, userPubkey });
+      if (!marketId) {
+        throw new Error('Market ID is required');
+      }
       const result = await createBet(marketId, position, amount, userPubkey);
       setInvoice(result);
       setPaymentStatus('pending');
