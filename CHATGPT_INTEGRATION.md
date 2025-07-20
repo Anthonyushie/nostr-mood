@@ -144,6 +144,14 @@ Body: {
 2. Restart your development server
 3. Ensure the key is valid and active
 
+### Quota Exceeded (429 Error)
+**Problem**: "OpenAI API quota exceeded" or 429 status code
+**Solution**:
+1. **Add Credits**: Go to [OpenAI Billing](https://platform.openai.com/settings/organization/billing) and add at least $5
+2. **Check Usage**: Visit [Usage Dashboard](https://platform.openai.com/usage) to see current usage
+3. **Free Trial**: Free trial credits expire after 3 months, you need paid credits
+4. **Verify Billing**: Ensure your payment method is valid and charges went through
+
 ### Rate Limiting
 **Problem**: "Rate limit exceeded"
 **Solution**:

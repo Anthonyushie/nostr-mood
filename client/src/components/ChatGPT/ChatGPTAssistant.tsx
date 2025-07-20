@@ -75,11 +75,45 @@ const ChatGPTAssistant: React.FC<ChatGPTAssistantProps> = ({
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response from ChatGPT');
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error responses
+        if (response.status === 429) {
+          let errorMessage = "OpenAI API quota exceeded. Please add credits to your OpenAI account.";
+          let errorTitle = "API Quota Exceeded";
+          
+          if (data.code === 'quota_exceeded') {
+            errorMessage = data.error + " " + (data.suggestion || "");
+          }
+          
+          toast({
+            title: errorTitle,
+            description: errorMessage,
+            variant: "destructive"
+          });
+          
+          // Add helpful message to chat
+          const errorChatMessage: ChatMessage = {
+            role: 'assistant',
+            content: `❌ **API Quota Exceeded**
+
+Your OpenAI API key has run out of credits. To continue using ChatGPT features:
+
+1. Visit [OpenAI Billing](https://platform.openai.com/settings/organization/billing)
+2. Add at least $5 in credits to your account
+3. Try your question again
+
+Each conversation costs about $0.002, so $5 covers ~2,500 conversations.`,
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, errorChatMessage]);
+          return;
+        }
+        
+        throw new Error(data.error || 'Failed to get response from ChatGPT');
+      }
       
       if (data.error) {
         let errorMessage = data.error;
@@ -160,13 +194,18 @@ Can you provide insights about this sentiment analysis and suggest trading strat
                 <strong>API Key Required:</strong> To use ChatGPT features, you need to provide an OpenAI API key.
               </p>
             </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenAI Platform</a>
-              </p>
-              <p>
-                <strong>Note:</strong> You'll need to add credits to your OpenAI account to use the API. 
-                Check your <a href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">usage and billing</a>.
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div>
+                <p className="font-medium mb-1">Setup Steps:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Get API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenAI Platform</a></li>
+                  <li>Add credits at <a href="https://platform.openai.com/settings/organization/billing" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Billing</a> (minimum $5)</li>
+                  <li>Add API key to environment variables</li>
+                  <li>Restart the application</li>
+                </ol>
+              </div>
+              <p className="text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                <strong>Cost:</strong> ~$0.002 per conversation. $5 covers ~2,500 conversations.
               </p>
             </div>
           </div>

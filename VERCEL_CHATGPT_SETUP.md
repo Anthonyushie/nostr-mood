@@ -73,10 +73,25 @@ After deployment:
 - Ensure you redeployed after adding the environment variable
 - Verify the key starts with `sk-` and has no extra spaces
 
-#### "API Quota Exceeded" Error
-- Add more credits to your OpenAI account at [Billing](https://platform.openai.com/settings/organization/billing)
-- Check your usage at [Usage Dashboard](https://platform.openai.com/usage)
-- Free trial credits expire after 3 months
+#### "API Quota Exceeded" Error (Most Common Issue)
+This 429 error means your OpenAI account has no credits:
+
+**Immediate Fix:**
+1. Go to [OpenAI Billing](https://platform.openai.com/settings/organization/billing)
+2. Click "Add to credit balance" 
+3. Add minimum $5 (covers ~2,500 conversations)
+4. Wait 2-3 minutes for credits to activate
+5. Try ChatGPT again
+
+**Why This Happens:**
+- Free trial credits expired (they last 3 months)
+- You've used all your credits
+- Payment method failed
+- Account suspended
+
+**Check Status:**
+- [Usage Dashboard](https://platform.openai.com/usage) - see current usage
+- [Account Settings](https://platform.openai.com/settings/organization/billing) - verify billing status
 
 #### "Connection Error"
 - Check browser console for network errors
