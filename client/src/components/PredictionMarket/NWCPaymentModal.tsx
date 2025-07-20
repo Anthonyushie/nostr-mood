@@ -131,7 +131,7 @@ export function NWCPaymentModal({
             Lightning Payment
           </DialogTitle>
           <DialogDescription>
-            Pay {amount} sats to bet <Badge variant={position === 'yes' ? 'default' : 'secondary'}>{position.toUpperCase()}</Badge> on: {marketQuestion}
+            Pay {amount} sats to bet {position.toUpperCase()} on: {marketQuestion}
           </DialogDescription>
         </DialogHeader>
 

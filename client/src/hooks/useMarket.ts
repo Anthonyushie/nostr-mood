@@ -61,6 +61,7 @@ export const useMarket = (userPubkey?: string): MarketData & MarketActions => {
     const checkApiMarkets = async () => {
       try {
         const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        console.log('Fetching markets from:', `${apiBaseUrl}/api/markets`);
         const response = await fetch(`${apiBaseUrl}/api/markets`);
         if (response.ok) {
           const apiMarkets = await response.json();

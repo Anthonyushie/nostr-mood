@@ -75,6 +75,7 @@ export function useNWCPayments() {
       
       // First test the API connectivity
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+      console.log('Using API base URL:', apiBaseUrl);
       try {
         const testResponse = await fetch(`${apiBaseUrl}/api/test`, {
           method: 'POST',
