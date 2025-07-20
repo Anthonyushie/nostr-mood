@@ -208,3 +208,12 @@ The application is designed to be deployed on platforms that support Node.js wit
 - All core functionality working: sentiment analysis, market creation, Lightning payments, settlement
 - WebSocket connection warnings for Nostr relays are expected in development (no external internet access)
 - Project fully operational with proper client-server architecture separation
+
+### July 20, 2025 - Enhanced Documentation & User Experience
+- **COMPREHENSIVE DOCUMENTATION**: Created detailed project README with complete architecture overview
+- Added interactive sentiment testing tool for real-time sentiment analysis experimentation
+- Created comprehensive guides: BETTING_GUIDE.md, SENTIMENT_ANALYSIS_GUIDE.md with examples
+- Enhanced Lightning payment modal with development testing shortcuts
+- Added detailed technical architecture documentation and deployment instructions
+- Improved user onboarding with clear explanations of betting mechanics and payout calculations
+- All documentation integrated into main README for centralized project information
