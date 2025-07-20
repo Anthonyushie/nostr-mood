@@ -10,6 +10,7 @@ import Sentiment from 'sentiment';
 import SWHandler from 'smart-widget-handler';
 import PredictionMarketContainer from './PredictionMarket/PredictionMarketContainer';
 import NostrShareTest from './NostrShare/NostrShareTest';
+import SentimentTester from './SentimentTester';
 
 interface SentimentResult {
   score: number;
@@ -445,6 +446,9 @@ ${result.sentiment.negative.length > 0 ? `❌ Negative words: ${result.sentiment
               </CardContent>
             </Card>
           )}
+          
+          {/* Sentiment Testing Tool */}
+          <SentimentTester />
           
           {/* Nostr Sharing Test (Development) */}
           <NostrShareTest />
