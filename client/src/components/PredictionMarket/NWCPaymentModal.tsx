@@ -123,11 +123,11 @@ export function NWCPaymentModal({
 
   useEffect(() => {
     console.log('Create bet effect:', { isOpen, paymentStatus, walletConnection });
-    if (isOpen && paymentStatus === 'creating' && walletConnection !== 'none') {
+    if (isOpen && paymentStatus === 'creating') {
       console.log('Triggering handleCreateBet');
       handleCreateBet();
     }
-  }, [isOpen, paymentStatus, walletConnection]);
+  }, [isOpen, paymentStatus]);
 
   useEffect(() => {
     console.log('Modal state change:', { isOpen, walletConnection, paymentStatus });
@@ -351,6 +351,23 @@ export function NWCPaymentModal({
           {walletConnection === 'none' && paymentStatus === 'idle' && (
             <div className="text-center text-gray-600 dark:text-gray-400">
               <p className="text-sm mb-4">Choose a wallet connection method to proceed with payment:</p>
+              
+              {/* Development mode shortcut */}
+              <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
+                  Development Mode: Skip wallet connection for testing
+                </p>
+                <Button 
+                  onClick={() => {
+                    console.log('Skipping wallet connection for testing');
+                    setPaymentStatus('creating');
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Create Test Invoice
+                </Button>
+              </div>
             </div>
           )}
         </div>
