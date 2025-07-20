@@ -53,7 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      console.log('Received bet request:', req.body);
+      console.log('=== BETS API REQUEST ===');
+      console.log('Method:', req.method);
+      console.log('Headers:', req.headers);
+      console.log('Body:', req.body);
+      console.log('========================');
+      
       const betData = placeBetSchema.parse(req.body);
       const { marketId, position, amount } = betData;
       const userPubkey = req.body.userPubkey || 'anonymous';

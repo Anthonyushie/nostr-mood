@@ -28,6 +28,18 @@ export function useBreezPayments() {
       console.log('Creating bet:', { marketId, position, amount, userPubkey });
       console.log('MarketId type:', typeof marketId, 'value:', marketId);
       
+      // First test the API connectivity
+      try {
+        const testResponse = await fetch('/api/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ test: 'connectivity' })
+        });
+        console.log('Test API response:', await testResponse.json());
+      } catch (testError) {
+        console.error('Test API failed:', testError);
+      }
+      
       const response = await fetch('/api/bets', {
         method: 'POST',
         headers: {
