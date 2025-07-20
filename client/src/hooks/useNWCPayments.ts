@@ -43,18 +43,19 @@ export function useNWCPayments() {
   const [nwcConnectionString, setNwcConnectionString] = useState('');
 
   useEffect(() => {
-    // Check for WebLN availability
-    if (window.webln) {
-      setWalletConnection('webln');
-      checkWeblnEnabled();
-    }
-    
-    // Check for existing NWC connection
+    // Check for existing NWC connection first
     const savedNwc = localStorage.getItem('nwc_connection');
     if (savedNwc) {
       setNwcConnectionString(savedNwc);
       setNwcConnected(true);
       setWalletConnection('nwc');
+      return;
+    }
+    
+    // Check for WebLN availability if no NWC
+    if (window.webln && window.webln.isEnabled) {
+      setWalletConnection('webln');
+      setIsWeblnEnabled(true);
     }
   }, []);
 

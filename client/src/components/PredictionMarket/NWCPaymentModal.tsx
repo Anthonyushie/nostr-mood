@@ -122,12 +122,15 @@ export function NWCPaymentModal({
   };
 
   useEffect(() => {
+    console.log('Create bet effect:', { isOpen, paymentStatus, walletConnection });
     if (isOpen && paymentStatus === 'creating' && walletConnection !== 'none') {
+      console.log('Triggering handleCreateBet');
       handleCreateBet();
     }
-  }, [isOpen, walletConnection]);
+  }, [isOpen, paymentStatus, walletConnection]);
 
   useEffect(() => {
+    console.log('Modal state change:', { isOpen, walletConnection, paymentStatus });
     if (!isOpen) {
       // Reset state when modal closes
       setCurrentInvoice(null);
@@ -135,8 +138,10 @@ export function NWCPaymentModal({
     } else {
       // When modal opens, set initial state based on wallet connection
       if (walletConnection !== 'none') {
+        console.log('Wallet connected, setting status to creating');
         setPaymentStatus('creating');
       } else {
+        console.log('No wallet connected, setting status to idle');
         setPaymentStatus('idle'); // Wait for wallet connection
       }
     }
