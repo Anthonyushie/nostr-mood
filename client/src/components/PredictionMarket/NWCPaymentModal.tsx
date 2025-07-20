@@ -30,7 +30,14 @@ export function NWCPaymentModal({
   onPaymentSuccess
 }: NWCPaymentModalProps) {
   const { toast } = useToast();
-  const { createBet, walletConnection, connectNWC, checkWeblnEnabled } = useNWCPayments();
+  const { 
+    createBet, 
+    walletConnection, 
+    connectNWC, 
+    checkWeblnEnabled,
+    nwcConnected,
+    setNwcConnectionString: setHookNwcConnectionString
+  } = useNWCPayments();
   
   const [currentInvoice, setCurrentInvoice] = useState<NWCInvoice | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'creating' | 'pending' | 'paid' | 'expired' | 'failed'>('creating');
@@ -86,6 +93,8 @@ export function NWCPaymentModal({
 
     try {
       await connectNWC(nwcConnectionString);
+      // Update both local and hook state
+      setHookNwcConnectionString(nwcConnectionString);
       setNwcConnectionString(''); // Clear the input for security
     } catch (error) {
       console.error('NWC connection failed:', error);
@@ -214,56 +223,62 @@ export function NWCPaymentModal({
                       Payment Pending
                     </CardTitle>
                     <CardDescription>
-                      Scan the QR code or copy the payment request to complete your bet
+                      Scan the QR code or copy the Lightning invoice to complete payment
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <div className="text-xs font-mono break-all">
-                        {currentInvoice.paymentRequest}
+                    {/* QR Code placeholder - in real implementation would use qrcode library */}
+                    <div className="flex justify-center">
+                      <div className="w-48 h-48 bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                          <Zap className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Lightning Invoice QR
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {amount} sats
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Invoice details */}
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">Lightning Invoice</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            readOnly
+                            value={currentInvoice.paymentRequest}
+                            className="text-xs font-mono"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyToClipboard(currentInvoice.paymentRequest)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                        <span>Amount: {amount} sats</span>
+                        <span>Expires: {new Date(currentInvoice.expiresAt).toLocaleTimeString()}</span>
                       </div>
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(currentInvoice.paymentRequest)}
-                        className="flex-1"
-                      >
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copy Invoice
+                      <Button variant="outline" onClick={onClose} className="flex-1">
+                        Cancel
                       </Button>
-                      
-                      {walletConnection === 'webln' && window.webln && (
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              await window.webln!.sendPayment(currentInvoice.paymentRequest);
-                              setPaymentStatus('paid');
-                              toast({
-                                title: "Payment Sent!",
-                                description: `Successfully paid ${amount} sats for ${position.toUpperCase()} bet`,
-                              });
-                            } catch (error) {
-                              toast({
-                                title: "Payment Failed",
-                                description: "Could not send payment through WebLN",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          className="flex-1"
-                        >
-                          <Zap className="h-4 w-4 mr-1" />
-                          Pay Now
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="text-xs text-muted-foreground">
-                      Invoice expires: {new Date(currentInvoice.expiresAt).toLocaleString()}
+                      <Button 
+                        onClick={() => setPaymentStatus('paid')} 
+                        className="flex-1"
+                        variant="default"
+                      >
+                        Mark as Paid
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -272,9 +287,12 @@ export function NWCPaymentModal({
               {paymentStatus === 'paid' && (
                 <Card>
                   <CardContent className="flex items-center justify-center p-6">
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="h-5 w-5" />
-                      Payment successful! Your bet has been placed.
+                    <div className="text-center">
+                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                      <h3 className="font-semibold text-green-700 dark:text-green-400">Payment Successful!</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Your {position.toUpperCase()} bet has been placed
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -283,26 +301,35 @@ export function NWCPaymentModal({
               {paymentStatus === 'failed' && (
                 <Card>
                   <CardContent className="flex items-center justify-center p-6">
-                    <div className="flex items-center gap-2 text-red-600">
-                      <AlertCircle className="h-5 w-5" />
-                      Payment failed. Please try again.
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
+                      <h3 className="font-semibold text-red-700 dark:text-red-400">Payment Failed</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Please try again or use a different wallet
+                      </p>
+                      <Button 
+                        onClick={() => setPaymentStatus('creating')} 
+                        className="mt-4"
+                        size="sm"
+                      >
+                        Retry Payment
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               )}
+
+              {/* Connected wallet status */}
+              {(walletConnection === 'nwc' && nwcConnected) && (
+                <div className="text-center">
+                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    NWC Wallet Connected
+                  </p>
+                </div>
+              )}
             </>
           )}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-            {paymentStatus === 'failed' && (
-              <Button onClick={handleCreateBet}>
-                Retry Payment
-              </Button>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>

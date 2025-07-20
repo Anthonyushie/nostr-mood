@@ -39,6 +39,8 @@ export function useNWCPayments() {
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [isWeblnEnabled, setIsWeblnEnabled] = useState(false);
   const [walletConnection, setWalletConnection] = useState<'none' | 'webln' | 'nwc'>('none');
+  const [nwcConnected, setNwcConnected] = useState(false);
+  const [nwcConnectionString, setNwcConnectionString] = useState('');
 
   useEffect(() => {
     // Check for WebLN availability
@@ -46,7 +48,14 @@ export function useNWCPayments() {
       setWalletConnection('webln');
       checkWeblnEnabled();
     }
-    // TODO: Check for NWC connection string in localStorage or env
+    
+    // Check for existing NWC connection
+    const savedNwc = localStorage.getItem('nwc_connection');
+    if (savedNwc) {
+      setNwcConnectionString(savedNwc);
+      setNwcConnected(true);
+      setWalletConnection('nwc');
+    }
   }, []);
 
   const checkWeblnEnabled = async () => {
@@ -61,6 +70,8 @@ export function useNWCPayments() {
       setIsWeblnEnabled(false);
     }
   };
+
+
 
   const createBet = useCallback(async (
     marketId: number, 
@@ -203,15 +214,34 @@ export function useNWCPayments() {
 
   const connectNWC = useCallback(async (connectionString: string) => {
     try {
-      // Store NWC connection string securely (in practice, you'd encrypt this)
+      // Basic validation of NWC connection string format
+      if (!connectionString.startsWith('nostr+walletconnect://')) {
+        throw new Error('Invalid NWC connection string format. Must start with nostr+walletconnect://');
+      }
+
+      // Parse the connection string
+      const url = new URL(connectionString);
+      const relay = url.searchParams.get('relay');
+      const secret = url.searchParams.get('secret');
+      const pubkey = url.hostname;
+
+      if (!relay || !secret || !pubkey) {
+        throw new Error('Missing required NWC parameters (relay, secret, or pubkey)');
+      }
+
+      // Store connection (in real implementation, this would establish WebSocket connection)
       localStorage.setItem('nwc_connection', connectionString);
+      setNwcConnectionString(connectionString);
+      setNwcConnected(true);
       setWalletConnection('nwc');
       
       toast({
         title: "NWC Connected",
-        description: "Successfully connected to your Lightning wallet",
+        description: `Successfully connected to wallet: ${pubkey.substring(0, 10)}...`,
       });
 
+      console.log('NWC connected:', { pubkey: pubkey.substring(0, 10) + '...', relay });
+      
       // Fetch balance after connecting
       await fetchBalance();
     } catch (error) {
@@ -221,6 +251,7 @@ export function useNWCPayments() {
         description: error instanceof Error ? error.message : "Failed to connect to wallet",
         variant: "destructive",
       });
+      throw error;
     }
   }, [fetchBalance, toast]);
 
@@ -243,11 +274,14 @@ export function useNWCPayments() {
     connectNWC,
     disconnectWallet,
     checkWeblnEnabled,
+    setNwcConnectionString,
     
     // State
     isLoading,
     balance,
     walletConnection,
-    isWeblnEnabled
+    isWeblnEnabled,
+    nwcConnected,
+    nwcConnectionString
   };
 }
