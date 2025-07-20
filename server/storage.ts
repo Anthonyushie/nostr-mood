@@ -29,14 +29,7 @@ export interface IStorage {
   getBetsByMarket(marketId: number): Promise<PredictionBet[]>;
   getBetByInvoiceId(invoiceId: string): Promise<PredictionBet | undefined>;
   updateBetPayment(betId: number, updates: { isPaid: boolean; paymentHash: string }): Promise<void>;
-  updateBetPayout(betId: number, updates: { 
-    payout?: number; 
-    payoutTxId?: string; 
-    payoutStatus?: string;
-    payoutError?: string;
-    payoutRetries?: number;
-    isSettled?: boolean;
-  }): Promise<void>;
+  updateBetPayout(betId: number, payout: number): Promise<void>;
   updateBetStatus(betId: number, updates: { paymentStatus?: string }): Promise<void>;
 }
 
@@ -61,23 +54,24 @@ export class MemStorage implements IStorage {
   }
   
   private initializeTestData() {
-    // Create a test market
+    // Create a test market that expires in 2 minutes for demonstration
     const testMarket: PredictionMarket = {
       id: 1,
       postId: 'test_post_123',
-      question: 'Will Bitcoin reach $100k by end of 2025?',
-      threshold: 0.5,
+      question: 'Will this test market show positive sentiment?',
+      threshold: 0.6,
       minStake: 100,
       maxStake: 10000,
-      duration: 60, // 1 hour
+      duration: 2, // 2 minutes
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+      expiresAt: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes from now
       isSettled: false,
       settlementResult: null,
       creatorPubkey: 'test_creator',
       totalYesPool: 0,
       totalNoPool: 0,
       feePercentage: 5.0,
+      postContent: 'This is absolutely fantastic news! I love how technology makes everything better and more exciting.',
     };
     
     this.markets.set(1, testMarket);
@@ -198,22 +192,12 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async updateBetPayout(betId: number, updates: { 
-    payout?: number; 
-    payoutTxId?: string; 
-    payoutStatus?: string;
-    payoutError?: string;
-    payoutRetries?: number;
-    isSettled?: boolean;
-  }): Promise<void> {
+  async updateBetPayout(betId: number, payout: number): Promise<void> {
     const bet = this.bets.get(betId);
     if (bet) {
-      if (updates.payout !== undefined) bet.payout = updates.payout;
-      if (updates.payoutTxId !== undefined) bet.payoutTxId = updates.payoutTxId;
-      if (updates.payoutStatus !== undefined) bet.payoutStatus = updates.payoutStatus;
-      if (updates.payoutError !== undefined) bet.payoutError = updates.payoutError;
-      if (updates.payoutRetries !== undefined) bet.payoutRetries = updates.payoutRetries;
-      if (updates.isSettled !== undefined) bet.isSettled = updates.isSettled;
+      bet.payout = payout;
+      bet.isSettled = true;
+      bet.payoutStatus = 'completed';
       this.bets.set(betId, bet);
     }
   }

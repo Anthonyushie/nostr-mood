@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, TrendingUp, Users, Clock, DollarSign, CheckCircle } from 'lucide-react';
 import MarketCreator from './MarketCreator';
 import MarketCard from './MarketCard';
+import SettlementDisplay from './SettlementDisplay';
 import { useMarket } from '@/hooks/useMarket';
 import { AnalysisResult } from '../NostrMoodAnalyzer';
 
@@ -178,6 +179,9 @@ const PredictionMarketContainer = ({
                 <p className="text-xs mt-1">Be the first to create a sentiment prediction!</p>
               </div>
             )}
+
+            {/* Settlement System */}
+            <SettlementDisplay />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

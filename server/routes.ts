@@ -175,13 +175,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Market already settled' });
       }
 
+      // Get all bets for the market before settling
+      const bets = await storage.getBetsByMarket(marketId);
+      const paidBets = bets.filter(bet => bet.isPaid);
+      
+      // Calculate winners and payouts
+      const winningPosition = result ? 'yes' : 'no';
+      const losingPosition = result ? 'no' : 'yes';
+      
+      const winningBets = paidBets.filter(bet => bet.position === winningPosition);
+      const losingBets = paidBets.filter(bet => bet.position === losingPosition);
+      
+      const totalWinningAmount = winningBets.reduce((sum, bet) => sum + bet.amount, 0);
+      const totalLosingAmount = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
+      
+      // Calculate fee and distribution
+      const feeAmount = Math.floor(totalLosingAmount * (market.feePercentage / 100));
+      const distributionPool = totalLosingAmount - feeAmount;
+      
+      let totalPayout = 0;
+      const payoutDetails = [];
+      
+      // Calculate individual payouts for winners
+      if (totalWinningAmount > 0 && distributionPool > 0) {
+        for (const bet of winningBets) {
+          const proportion = bet.amount / totalWinningAmount;
+          const winnings = Math.floor(distributionPool * proportion);
+          const totalReturn = bet.amount + winnings; // Original bet + winnings
+          
+          totalPayout += totalReturn;
+          payoutDetails.push({
+            betId: bet.id,
+            userPubkey: bet.userPubkey,
+            originalBet: bet.amount,
+            winnings: winnings,
+            totalReturn: totalReturn
+          });
+          
+          // Update bet with payout info
+          await storage.updateBetPayout(bet.id, totalReturn);
+        }
+      }
+      
       // Settle the market
       await storage.settleMarket(marketId, result);
       
-      // Process payouts asynchronously
+      // Process payouts asynchronously (simulate Lightning payouts)
       processMarketPayouts(marketId, result).catch(console.error);
 
-      res.json({ success: true, result });
+      console.log(`💰 Market ${marketId} settlement complete:`, {
+        result: result ? 'YES wins' : 'NO wins',
+        winnerCount: winningBets.length,
+        totalPayout: totalPayout,
+        feeCollected: feeAmount,
+        distributionPool: distributionPool
+      });
+
+      res.json({ 
+        success: true, 
+        result,
+        winnerCount: winningBets.length,
+        totalPayout: totalPayout,
+        feeCollected: feeAmount,
+        payoutDetails: payoutDetails
+      });
     } catch (error) {
       console.error('Error settling market:', error);
       res.status(500).json({ error: 'Failed to settle market' });
@@ -343,7 +400,132 @@ Keep responses helpful, concise, and relevant to sentiment analysis and predicti
     }
   });
 
+  // Add endpoint to check for expired markets
+  app.get("/api/markets/expired", async (req, res) => {
+    try {
+      const markets = await storage.getAllMarkets();
+      const now = new Date();
+      
+      const expiredMarkets = markets.filter(market => 
+        !market.isSettled && new Date(market.expiresAt) <= now
+      );
+      
+      res.json(expiredMarkets);
+    } catch (error) {
+      console.error('Error fetching expired markets:', error);
+      res.status(500).json({ error: 'Failed to fetch expired markets' });
+    }
+  });
+
+  // Auto-settle endpoint (can be called by cron or manually)
+  app.post("/api/markets/auto-settle", async (req, res) => {
+    try {
+      const markets = await storage.getAllMarkets();
+      const now = new Date();
+      let settledCount = 0;
+      const results = [];
+      
+      for (const market of markets) {
+        if (!market.isSettled && new Date(market.expiresAt) <= now) {
+          try {
+            console.log(`⏰ Auto-settling expired market ${market.id}: "${market.question}"`);
+            
+            // Re-analyze sentiment to determine winner
+            const analysis = new (require('sentiment'))().analyze(market.postContent);
+            const sentimentScore = analysis.comparative;
+            const result = sentimentScore > 0.6; // Use same threshold as original analysis
+            
+            // Get bets and calculate payouts
+            const bets = await storage.getBetsByMarket(market.id);
+            const paidBets = bets.filter(bet => bet.isPaid);
+            
+            const winningPosition = result ? 'yes' : 'no';
+            const winningBets = paidBets.filter(bet => bet.position === winningPosition);
+            const losingBets = paidBets.filter(bet => bet.position !== winningPosition);
+            
+            const totalWinningAmount = winningBets.reduce((sum, bet) => sum + bet.amount, 0);
+            const totalLosingAmount = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
+            
+            const feeAmount = Math.floor(totalLosingAmount * (market.feePercentage / 100));
+            const distributionPool = totalLosingAmount - feeAmount;
+            
+            let totalPayout = 0;
+            
+            // Calculate and update payouts for winners
+            if (totalWinningAmount > 0 && distributionPool > 0) {
+              for (const bet of winningBets) {
+                const proportion = bet.amount / totalWinningAmount;
+                const winnings = Math.floor(distributionPool * proportion);
+                const totalReturn = bet.amount + winnings;
+                
+                totalPayout += totalReturn;
+                await storage.updateBetPayout(bet.id, totalReturn);
+              }
+            }
+            
+            // Settle the market
+            await storage.settleMarket(market.id, result);
+            
+            const settlementResult = {
+              marketId: market.id,
+              question: market.question,
+              result: result ? 'YES (Positive)' : 'NO (Negative/Neutral)',
+              sentimentScore: sentimentScore.toFixed(3),
+              winnerCount: winningBets.length,
+              totalPayout: totalPayout,
+              feeCollected: feeAmount
+            };
+            
+            results.push(settlementResult);
+            settledCount++;
+            
+            console.log(`✅ Auto-settled market ${market.id}:`, settlementResult);
+            
+          } catch (error) {
+            console.error(`❌ Failed to auto-settle market ${market.id}:`, error);
+            results.push({
+              marketId: market.id,
+              error: error.message
+            });
+          }
+        }
+      }
+      
+      console.log(`🎯 Auto-settlement complete: ${settledCount} markets processed`);
+      
+      res.json({
+        success: true,
+        settledCount: settledCount,
+        results: results
+      });
+      
+    } catch (error) {
+      console.error('Error in auto-settlement:', error);
+      res.status(500).json({ error: 'Auto-settlement failed' });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // Start automatic settlement checking every 60 seconds
+  setInterval(async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/markets/auto-settle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.settledCount > 0) {
+          console.log(`🔄 Automatic settlement: ${data.settledCount} markets settled`);
+        }
+      }
+    } catch (error) {
+      // Silently ignore errors during automatic settlement checks
+    }
+  }, 60000); // Check every 60 seconds
+  
   return httpServer;
 }
 
