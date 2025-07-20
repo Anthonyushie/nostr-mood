@@ -40,7 +40,7 @@ export function NWCPaymentModal({
   } = useNWCPayments();
   
   const [currentInvoice, setCurrentInvoice] = useState<NWCInvoice | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'creating' | 'pending' | 'paid' | 'expired' | 'failed'>('creating');
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'creating' | 'pending' | 'paid' | 'expired' | 'failed'>('idle');
   const [nwcConnectionString, setNwcConnectionString] = useState('');
 
   const copyToClipboard = async (text: string) => {
@@ -96,6 +96,8 @@ export function NWCPaymentModal({
       // Update both local and hook state
       setHookNwcConnectionString(nwcConnectionString);
       setNwcConnectionString(''); // Clear the input for security
+      // After successful connection, create the bet
+      setPaymentStatus('creating');
     } catch (error) {
       console.error('NWC connection failed:', error);
     }
@@ -108,6 +110,8 @@ export function NWCPaymentModal({
         title: "WebLN Connected",
         description: "Successfully connected to your Lightning wallet",
       });
+      // After successful connection, create the bet
+      setPaymentStatus('creating');
     } catch (error) {
       toast({
         title: "WebLN Connection Failed",
@@ -118,18 +122,25 @@ export function NWCPaymentModal({
   };
 
   useEffect(() => {
-    if (isOpen && paymentStatus === 'creating') {
+    if (isOpen && paymentStatus === 'creating' && walletConnection !== 'none') {
       handleCreateBet();
     }
-  }, [isOpen]);
+  }, [isOpen, walletConnection]);
 
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal closes
       setCurrentInvoice(null);
-      setPaymentStatus('creating');
+      setPaymentStatus('idle');
+    } else {
+      // When modal opens, set initial state based on wallet connection
+      if (walletConnection !== 'none') {
+        setPaymentStatus('creating');
+      } else {
+        setPaymentStatus('idle'); // Wait for wallet connection
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, walletConnection]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -145,7 +156,7 @@ export function NWCPaymentModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {walletConnection === 'none' && (
+          {walletConnection === 'none' && paymentStatus === 'idle' && (
             <Tabs defaultValue="webln" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="webln">WebLN</TabsTrigger>
@@ -202,7 +213,7 @@ export function NWCPaymentModal({
             </Tabs>
           )}
 
-          {walletConnection !== 'none' && (
+          {walletConnection !== 'none' && paymentStatus !== 'idle' && (
             <>
               {paymentStatus === 'creating' && (
                 <Card>
@@ -329,6 +340,13 @@ export function NWCPaymentModal({
                 </div>
               )}
             </>
+          )}
+
+          {/* No wallet connected and idle state */}
+          {walletConnection === 'none' && paymentStatus === 'idle' && (
+            <div className="text-center text-gray-600 dark:text-gray-400">
+              <p className="text-sm mb-4">Choose a wallet connection method to proceed with payment:</p>
+            </div>
           )}
         </div>
       </DialogContent>
