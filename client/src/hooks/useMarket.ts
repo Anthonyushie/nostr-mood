@@ -63,7 +63,7 @@ export const useMarket = (userPubkey?: string): MarketData & MarketActions => {
         const response = await fetch('/api/markets');
         if (response.ok) {
           const apiMarkets = await response.json();
-          if (apiMarkets.length > 0 && markets.length === 0) {
+          if (apiMarkets.length > 0 && parsedMarkets.length === 0) {
             console.log('Loading markets from API:', apiMarkets);
             setMarkets(apiMarkets);
             localStorage.setItem('predictionMarkets', JSON.stringify(apiMarkets));

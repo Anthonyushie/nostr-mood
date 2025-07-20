@@ -75,13 +75,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Place bet - creates Breez invoice
   app.post("/api/bets", async (req, res) => {
     try {
+      console.log('Received bet request:', JSON.stringify(req.body, null, 2));
       const betData = placeBetSchema.parse(req.body);
       const { marketId, position, amount } = betData;
       const userPubkey = req.body.userPubkey || 'anonymous';
+      
+      console.log('Parsed bet data:', { marketId, position, amount, userPubkey });
+      console.log('Looking for market with ID:', marketId, 'type:', typeof marketId);
 
       // Check if market exists and is still active
       const market = await storage.getMarketById(marketId);
+      console.log('Found market:', market ? `ID ${market.id}` : 'null');
+      
       if (!market) {
+        console.log('Available markets:', await storage.getAllMarkets());
         return res.status(404).json({ error: 'Market not found' });
       }
       
