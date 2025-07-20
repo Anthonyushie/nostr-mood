@@ -166,3 +166,12 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Improved sharing content format with emojis and better structure
 - Added fallback sharing that works both in YakiHonne and standalone environments
 - Share button now available for all users (not just widget mode) with adaptive behavior
+
+### July 20, 2025 - Project Migration from Replit Agent to Replit
+- **MIGRATION COMPLETED**: Successfully migrated from Replit Agent to standard Replit environment
+- Fixed API endpoint routing issues by adding missing `/api/test` endpoint
+- Updated widget.json configuration for local development environment
+- Verified all existing functionality: Express server, React frontend, Lightning payments
+- All dependencies properly installed and workflow running correctly on port 5000
+- Breez SDK configured for development mode with mock payment fallbacks
+- Project now fully compatible with Replit's development and deployment infrastructure

@@ -217,6 +217,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test API endpoint for connectivity
+  app.post("/api/test", async (req, res) => {
+    try {
+      console.log('Test API called:', req.body);
+      res.json({ success: true, message: 'API is working', timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error in test API:', error);
+      res.status(500).json({ error: 'Test API failed' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
