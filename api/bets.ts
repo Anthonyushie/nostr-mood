@@ -1,5 +1,20 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { placeBetSchema } from '../shared/schema';
+
+// Inline schema validation for Vercel deployment
+const placeBetSchema = {
+  parse: (data: any) => {
+    if (!data.marketId || typeof data.marketId !== 'number') {
+      throw new Error('Invalid marketId');
+    }
+    if (!data.position || !['yes', 'no'].includes(data.position)) {
+      throw new Error('Invalid position');
+    }
+    if (!data.amount || typeof data.amount !== 'number' || data.amount <= 0) {
+      throw new Error('Invalid amount');
+    }
+    return data;
+  }
+};
 
 // In-memory storage for Vercel (this would normally be a database)
 let markets = [
@@ -25,7 +40,7 @@ let markets = [
 let bets = [];
 let currentBetId = 1;
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -38,6 +53,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
+      console.log('Received bet request:', req.body);
       const betData = placeBetSchema.parse(req.body);
       const { marketId, position, amount } = betData;
       const userPubkey = req.body.userPubkey || 'anonymous';
