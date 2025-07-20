@@ -22,8 +22,11 @@ NostrMood now includes ChatGPT AI assistance to provide intelligent insights abo
 ### 1. Get OpenAI API Key
 1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Create an account if you don't have one
-3. Generate a new API key
-4. Copy the key (starts with `sk-...`)
+3. **Add Credits**: Go to [Billing](https://platform.openai.com/settings/organization/billing) and add at least $5 in credits
+4. Generate a new API key
+5. Copy the key (starts with `sk-...`)
+
+**Important**: You need to add credits to your OpenAI account before the API will work. Free trial credits may have expired.
 
 ### 2. Configure Environment
 Add your API key to your environment variables:

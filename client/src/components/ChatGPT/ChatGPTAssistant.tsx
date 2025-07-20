@@ -81,6 +81,23 @@ const ChatGPTAssistant: React.FC<ChatGPTAssistantProps> = ({
 
       const data = await response.json();
       
+      if (data.error) {
+        let errorMessage = data.error;
+        let errorTitle = "ChatGPT Error";
+        
+        if (data.code === 'quota_exceeded') {
+          errorTitle = "API Quota Exceeded";
+          errorMessage = "Your OpenAI API key has exceeded its usage quota. Please add credits to your OpenAI account or wait for your quota to reset.";
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: data.response,
@@ -91,8 +108,8 @@ const ChatGPTAssistant: React.FC<ChatGPTAssistantProps> = ({
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: "Error",
-        description: "Failed to get response from ChatGPT. Please check your API key.",
+        title: "Connection Error",
+        description: "Failed to connect to ChatGPT. Please check your internet connection and try again.",
         variant: "destructive"
       });
     } finally {
@@ -143,9 +160,15 @@ Can you provide insights about this sentiment analysis and suggest trading strat
                 <strong>API Key Required:</strong> To use ChatGPT features, you need to provide an OpenAI API key.
               </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenAI Platform</a>
-            </p>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>
+                Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenAI Platform</a>
+              </p>
+              <p>
+                <strong>Note:</strong> You'll need to add credits to your OpenAI account to use the API. 
+                Check your <a href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">usage and billing</a>.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -323,13 +323,17 @@ Keep responses helpful, concise, and relevant to sentiment analysis and predicti
       
       if (error instanceof Error) {
         if (error.message.includes('API key')) {
-          return res.status(401).json({ error: 'Invalid OpenAI API key' });
+          return res.status(401).json({ error: 'Invalid OpenAI API key. Please check your key at https://platform.openai.com/api-keys' });
         }
-        if (error.message.includes('quota')) {
-          return res.status(429).json({ error: 'OpenAI API quota exceeded' });
+        if (error.message.includes('quota') || error.message.includes('insufficient_quota')) {
+          return res.status(429).json({ 
+            error: 'OpenAI API quota exceeded. Please check your billing and usage at https://platform.openai.com/usage',
+            code: 'quota_exceeded',
+            suggestion: 'Add credits to your OpenAI account or wait for your quota to reset.'
+          });
         }
         if (error.message.includes('rate limit')) {
-          return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+          return res.status(429).json({ error: 'Rate limit exceeded. Please try again in a few minutes.' });
         }
       }
 
