@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus, User } from 'lucide-react';
+import { Loader2, Search, MessageCircle, TrendingUp, TrendingDown, Minus, User, TestTube, Settings } from 'lucide-react';
 import { SimplePool, Event, nip19 } from 'nostr-tools';
 import Sentiment from 'sentiment';
 import SWHandler from 'smart-widget-handler';
@@ -447,11 +448,50 @@ ${result.sentiment.negative.length > 0 ? `❌ Negative words: ${result.sentiment
             </Card>
           )}
           
-          {/* Sentiment Testing Tool */}
-          <SentimentTester />
-          
-          {/* Nostr Sharing Test (Development) */}
-          <NostrShareTest />
+          {/* Testing Tools */}
+          <div className="flex gap-2 flex-wrap">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  Sentiment Testing Tool
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TestTube className="h-5 w-5" />
+                    Sentiment Testing Tool
+                  </DialogTitle>
+                  <DialogDescription>
+                    Test how sentiment analysis works and predict betting outcomes
+                  </DialogDescription>
+                </DialogHeader>
+                <SentimentTester />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Nostr Sharing Test
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Nostr Sharing Test
+                  </DialogTitle>
+                  <DialogDescription>
+                    Test Nostr sharing functionality across different platforms and methods
+                  </DialogDescription>
+                </DialogHeader>
+                <NostrShareTest />
+              </DialogContent>
+            </Dialog>
+          </div>
           
           {/* Prediction Markets Integration */}
           {result && (

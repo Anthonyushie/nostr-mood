@@ -60,17 +60,7 @@ export default function SentimentTester() {
   ];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TestTube className="h-5 w-5" />
-          Sentiment Testing Tool
-        </CardTitle>
-        <CardDescription>
-          Test how sentiment analysis works and predict betting outcomes
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="w-full space-y-4">
         <div className="space-y-2">
           <Input
             placeholder="Enter text to analyze sentiment..."
@@ -158,7 +148,6 @@ export default function SentimentTester() {
             </CardContent>
           </Card>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

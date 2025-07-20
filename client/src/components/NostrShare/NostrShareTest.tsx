@@ -168,14 +168,7 @@ const NostrShareTest: React.FC<NostrShareTestProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Share className="h-5 w-5" />
-          Nostr Sharing Test
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="w-full space-y-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Button
@@ -230,8 +223,7 @@ const NostrShareTest: React.FC<NostrShareTestProps> = ({
           <p><strong>Test Content:</strong></p>
           <p className="bg-muted p-2 rounded">{testContent}</p>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 
