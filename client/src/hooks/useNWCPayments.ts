@@ -74,8 +74,9 @@ export function useNWCPayments() {
       console.log('MarketId type:', typeof marketId, 'value:', marketId);
       
       // First test the API connectivity
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
       try {
-        const testResponse = await fetch('/api/test', {
+        const testResponse = await fetch(`${apiBaseUrl}/api/test`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ test: 'connectivity' })
@@ -85,7 +86,7 @@ export function useNWCPayments() {
         console.error('Test API failed:', testError);
       }
       
-      const response = await fetch('/api/bets', {
+      const response = await fetch(`${apiBaseUrl}/api/bets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

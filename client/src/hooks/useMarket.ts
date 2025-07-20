@@ -60,7 +60,8 @@ export const useMarket = (userPubkey?: string): MarketData & MarketActions => {
     // Also fetch from API if localStorage is empty
     const checkApiMarkets = async () => {
       try {
-        const response = await fetch('/api/markets');
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        const response = await fetch(`${apiBaseUrl}/api/markets`);
         if (response.ok) {
           const apiMarkets = await response.json();
           // Check if localStorage markets are empty and API has markets

@@ -68,8 +68,10 @@ const MarketCreator = ({ postId, currentSentiment, onMarketCreated, disabled }: 
         creatorPubkey: 'temp-pubkey', // This would come from user context
       };
 
-      // Create market via API
-      const response = await fetch('/api/markets', {
+      // Create market via API - use explicit localhost for development
+      const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api/markets' : '/api/markets';
+      console.log('Creating market with URL:', apiUrl);
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
