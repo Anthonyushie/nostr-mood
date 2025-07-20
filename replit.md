@@ -146,3 +146,13 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Created extensive documentation: BREEZ_INTEGRATION.md with deployment guides
 - App supports both development mode (mock payments) and production (real Lightning)
 - All existing prediction market functionality preserved with zero regressions
+
+### January 20, 2025 - Vercel Deployment API Routes
+- **DEPLOYMENT FIX**: Created Vercel-compatible API routes in `/api/` directory
+- Added `/api/bets.ts` for handling Lightning payment invoice creation
+- Added `/api/markets.ts` for serving prediction markets data
+- Added `/api/wallet/balance.ts` for wallet balance endpoint
+- Implemented proper CORS headers for cross-origin requests
+- Fixed 405 Method Not Allowed errors on Vercel deployment
+- All API routes use mock data for demonstration (production would use database)
+- Maintains compatibility with local development Express server
