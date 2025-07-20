@@ -325,8 +325,8 @@ Can you provide insights about this sentiment analysis and suggest trading strat
             <strong>Tips:</strong> Ask about sentiment patterns, market predictions, 
             or get explanations about the analysis results.
           </p>
-          <p className="mt-1 opacity-75">
-            Too broke to pay for OpenAI API 💀
+          <p className="mt-1 opacity-75 text-sm font-medium">
+            TOO BROKE TO PAY FOR OPENAI API 💀
           </p>
         </div>
       </CardContent>
