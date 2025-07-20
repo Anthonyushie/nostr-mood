@@ -131,20 +131,19 @@ The application is designed to be deployed on platforms that support Node.js wit
 - Created comprehensive documentation and .gitignore file
 - Application now fully compatible with YakiHonne smart widget infrastructure
 
-### January 19, 2025 - Breez Nodeless Lightning Integration
-- **MAJOR FEATURE**: Integrated Breez Nodeless (Liquid) SDK for Lightning payments
-- Added comprehensive `BreezService` for invoice creation, payment detection, and payouts
-- Updated database schema with Breez payment tracking fields (invoiceId, paymentRequest, payoutStatus, etc.)
-- Created `BreezPaymentModal` component with real-time payment status and wallet integration
-- Implemented `useBreezPayments` hook for seamless frontend payment operations
-- Added automatic payment detection with event listeners and status polling
-- Built robust error handling with development fallbacks (mock invoices when API key missing)
-- Created comprehensive payout system with retry logic and settlement automation
-- Updated MarketCard component with streamlined YES/NO betting interface
-- Added wallet balance display and Lightning wallet integration
-- **SELF-CUSTODIAL**: Users retain full custody of funds in their Breez wallet
-- Created extensive documentation: BREEZ_INTEGRATION.md with deployment guides
-- App supports both development mode (mock payments) and production (real Lightning)
+### July 20, 2025 - Nostr Wallet Connect (NWC) Lightning Integration
+- **MAJOR FEATURE**: Replaced Breez SDK with Nostr Wallet Connect (NWC) for decentralized Lightning payments
+- Added comprehensive `NWCService` for invoice creation, payment detection, and payouts via Nostr protocol
+- Implemented multi-wallet support: WebLN (Alby, Zeus extensions) and NWC connection strings
+- Created `NWCPaymentModal` component with wallet connection options and real-time payment status
+- Built `useNWCPayments` hook with automatic wallet detection and seamless payment operations
+- Added support for any NWC-compatible wallet (Alby, Zeus, Mutiny, Phoenix, etc.)
+- **FULLY DECENTRALIZED**: No API keys required, no custodial services, built on open Nostr protocol
+- **ENHANCED SELF-CUSTODY**: Users maintain complete control with any Lightning wallet of choice
+- Preserved all existing database schema and prediction market functionality
+- Created comprehensive documentation: NWC_INTEGRATION.md with wallet setup guides
+- Removed dependency on centralized Breez API, now works with any NWC wallet
+- Enhanced privacy and user autonomy with Nostr protocol integration
 - All existing prediction market functionality preserved with zero regressions
 
 ### January 20, 2025 - Vercel Deployment API Routes

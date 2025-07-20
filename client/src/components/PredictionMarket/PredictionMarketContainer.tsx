@@ -10,7 +10,7 @@ import { useMarket } from '@/hooks/useMarket';
 import { AnalysisResult } from '../NostrMoodAnalyzer';
 
 interface PredictionMarketContainerProps {
-  analysisResult: AnalysisResult;
+  analysisResult?: AnalysisResult;
   userPubkey?: string;
   isEnabled?: boolean;
 }
@@ -20,7 +20,7 @@ const PredictionMarketContainer = ({
   userPubkey, 
   isEnabled = true 
 }: PredictionMarketContainerProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   
   const {
     markets,
@@ -39,7 +39,8 @@ const PredictionMarketContainer = ({
     return null;
   }
 
-  const postMarkets = getMarketsByPostId(analysisResult.postId);
+  // Show all markets if no analysis result provided (safer check)
+  const postMarkets = (analysisResult && analysisResult.postId) ? getMarketsByPostId(analysisResult.postId) : markets;
   const activeMarkets = postMarkets.filter(market => !market.isSettled);
   const settledMarkets = postMarkets.filter(market => market.isSettled);
   
@@ -104,18 +105,32 @@ const PredictionMarketContainer = ({
         
         <CollapsibleContent>
           <CardContent className="space-y-4 p-4">
-            {/* Market Creator */}
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                Create prediction markets based on this post's sentiment analysis.
-              </p>
-              <MarketCreator
-                postId={analysisResult.postId}
-                currentSentiment={analysisResult.sentiment.comparative}
-                onMarketCreated={onMarketCreated}
-                disabled={isLoading}
-              />
-            </div>
+            {/* Market Creator - only show for specific posts */}
+            {analysisResult && (
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Create prediction markets based on this post's sentiment analysis.
+                </p>
+                <MarketCreator
+                  postId={analysisResult.postId}
+                  currentSentiment={analysisResult.sentiment.comparative}
+                  onMarketCreated={onMarketCreated}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+            
+            {/* Show existing markets for standalone mode */}
+            {!analysisResult && postMarkets.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">No Active Markets</p>
+                <p className="text-sm">
+                  Lightning-powered prediction markets will appear here once created.
+                  Connect to the sentiment analyzer to create new markets.
+                </p>
+              </div>
+            )}
 
             {/* Active Markets */}
             {activeMarkets.length > 0 && (

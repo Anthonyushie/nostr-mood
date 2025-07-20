@@ -1,25 +1,25 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { breezService } from "./breezService";
+import { nwcService } from "./nwcService";
 import { insertPredictionBetSchema, placeBetSchema, insertPredictionMarketSchema, createMarketSchema, type InsertPredictionMarket } from "../shared/schema";
-// Note: SdkEvent might not be available in web version, using string literals
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize Breez service (optional for development)
+  // Initialize NWC service (optional for development)
   try {
-    await breezService.initialize();
-    console.log('✓ Breez SDK initialized successfully');
+    const nwcConnectionString = process.env.NWC_CONNECTION_STRING;
+    await nwcService.initialize(nwcConnectionString);
+    console.log('✓ NWC Service initialized successfully');
   } catch (error) {
-    console.warn('⚠ Breez SDK not available (this is normal in development without API key):');
-    console.warn('  Add BREEZ_API_KEY to environment variables to enable Lightning payments');
+    console.warn('⚠ NWC Service not available (this is normal in development without connection):');
+    console.warn('  Add NWC_CONNECTION_STRING to environment variables to enable Lightning payments');
     console.warn('  App will continue to work with mock payments for development');
   }
 
   // Set up payment event listeners
-  breezService.addEventListener('payment-handler', (event) => {
-    if (event.type === 'payment_received') {
-      handlePaymentReceived(event.payment);
+  nwcService.addEventListener('payment-handler', (event) => {
+    if (event.type === 'payment_received' || event.type === 'invoice_created') {
+      handlePaymentReceived(event.payment || event.invoice);
     }
   });
 
@@ -102,20 +102,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create Breez invoice (with fallback for development)
+      // Create NWC invoice (with fallback for development)
       let invoice;
       try {
-        invoice = await breezService.createInvoice(
+        invoice = await nwcService.createInvoice(
           amount,
           `NostrMood bet: ${position} on ${market.question}`
         );
       } catch (error) {
-        console.warn('Breez not available, using mock invoice for development');
-        // Mock invoice for development when Breez is not available
+        console.warn('NWC not available, using mock invoice for development');
+        // Mock invoice for development when NWC is not available
         invoice = {
           invoiceId: `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           paymentRequest: `lnbc${amount}u1p...mock_invoice_for_development_testing`,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+          paymentHash: `mock_hash_${Date.now()}`
         };
       }
 
@@ -189,10 +190,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get wallet balance
   app.get("/api/wallet/balance", async (req, res) => {
     try {
-      const balance = await breezService.getWalletInfo();
+      const balance = await nwcService.getWalletInfo();
       res.json(balance);
     } catch (error) {
-      console.warn('Breez not available, returning mock balance for development');
+      console.warn('NWC not available, returning mock balance for development');
       // Mock balance for development
       res.json({
         availableBalanceSat: 100000, // 100k sats
@@ -212,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if invoice is expired
-      if (bet.expiresAt && breezService.isInvoiceExpired(bet.expiresAt)) {
+      if (bet.expiresAt && nwcService.isInvoiceExpired(bet.expiresAt)) {
         await storage.updateBetStatus(betId, { paymentStatus: 'expired' });
         return res.json({ ...bet, paymentStatus: 'expired' });
       }

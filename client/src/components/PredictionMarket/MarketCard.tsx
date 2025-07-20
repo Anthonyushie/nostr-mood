@@ -11,8 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { placeBetSchema, type PlaceBetData, type PredictionMarket } from '@shared/schema';
 import { Timer, TrendingUp, TrendingDown, DollarSign, Users, Clock, CheckCircle, Share2, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { BreezPaymentModal } from './BreezPaymentModal';
-import { useBreezPayments } from '@/hooks/useBreezPayments';
+import { NWCPaymentModal } from './NWCPaymentModal';
+import { useNWCPayments } from '@/hooks/useNWCPayments';
 
 interface MarketCardProps {
   market: PredictionMarket;
@@ -63,7 +63,7 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
   const [selectedPosition, setSelectedPosition] = useState<'yes' | 'no'>('yes');
   const [betAmount, setBetAmount] = useState(market.minStake);
   const { toast } = useToast();
-  const { balance } = useBreezPayments();
+  const { balance } = useNWCPayments();
 
   const form = useForm<PlaceBetData>({
     resolver: zodResolver(placeBetSchema),
@@ -249,15 +249,18 @@ const MarketCard = ({ market, onBetPlaced, userPubkey }: MarketCardProps) => {
           </div>
         )}
 
-        {/* Breez Payment Modal */}
-        <BreezPaymentModal
+        {/* NWC Payment Modal */}
+        <NWCPaymentModal
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           marketId={market.id}
           marketQuestion={market.question}
           position={selectedPosition}
           amount={betAmount}
-          userPubkey={userPubkey}
+          onPaymentSuccess={(bet) => {
+            onBetPlaced(bet);
+            setIsPaymentModalOpen(false);
+          }}
         />
       </CardContent>
     </Card>

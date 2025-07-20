@@ -1,0 +1,251 @@
+import { useState, useCallback, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
+export interface NWCInvoice {
+  invoiceId: string;
+  paymentRequest: string;
+  expiresAt: string;
+  paymentHash: string;
+}
+
+export interface WalletBalance {
+  availableBalanceSat: number;
+  pendingReceiveSat: number;
+}
+
+declare global {
+  interface Window {
+    webln?: {
+      enable(): Promise<void>;
+      makeInvoice(args: { amount: number; defaultMemo?: string }): Promise<{ paymentRequest: string }>;
+      sendPayment(paymentRequest: string): Promise<{ preimage: string }>;
+      getBalance(): Promise<{ balance: number }>;
+      isEnabled: boolean;
+    };
+    nostr?: {
+      getPublicKey(): Promise<string>;
+      signEvent(event: any): Promise<any>;
+      nip04?: {
+        encrypt(pubkey: string, plaintext: string): Promise<string>;
+        decrypt(pubkey: string, ciphertext: string): Promise<string>;
+      };
+    };
+  }
+}
+
+export function useNWCPayments() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [balance, setBalance] = useState<WalletBalance | null>(null);
+  const [isWeblnEnabled, setIsWeblnEnabled] = useState(false);
+  const [walletConnection, setWalletConnection] = useState<'none' | 'webln' | 'nwc'>('none');
+
+  useEffect(() => {
+    // Check for WebLN availability
+    if (window.webln) {
+      setWalletConnection('webln');
+      checkWeblnEnabled();
+    }
+    // TODO: Check for NWC connection string in localStorage or env
+  }, []);
+
+  const checkWeblnEnabled = async () => {
+    try {
+      if (window.webln) {
+        await window.webln.enable();
+        setIsWeblnEnabled(true);
+        setWalletConnection('webln');
+      }
+    } catch (error) {
+      console.log('WebLN not available or user denied access');
+      setIsWeblnEnabled(false);
+    }
+  };
+
+  const createBet = useCallback(async (
+    marketId: number, 
+    position: 'yes' | 'no', 
+    amount: number,
+    userPubkey?: string
+  ) => {
+    setIsLoading(true);
+    try {
+      console.log('Creating bet:', { marketId, position, amount, userPubkey });
+      console.log('MarketId type:', typeof marketId, 'value:', marketId);
+      
+      // First test the API connectivity
+      try {
+        const testResponse = await fetch('/api/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ test: 'connectivity' })
+        });
+        console.log('Test API response:', await testResponse.json());
+      } catch (testError) {
+        console.error('Test API failed:', testError);
+      }
+      
+      const response = await fetch('/api/bets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          marketId,
+          position,
+          amount,
+          userPubkey: userPubkey || 'anonymous'
+        }),
+      });
+
+      console.log('Response status:', response.status, response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        let errorMessage = `Failed to create bet (${response.status})`;
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (jsonError) {
+          console.warn('Failed to parse error response as JSON:', jsonError);
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response, got ${contentType}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      if (!responseText.trim()) {
+        throw new Error('Empty response from server');
+      }
+
+      const data = JSON.parse(responseText);
+      
+      // If WebLN is available, attempt to pay the invoice automatically
+      if (isWeblnEnabled && window.webln && data.paymentRequest) {
+        try {
+          await window.webln.sendPayment(data.paymentRequest);
+          toast({
+            title: "Payment Sent!",
+            description: `Successfully paid ${amount} sats for ${position.toUpperCase()} bet`,
+          });
+        } catch (weblnError) {
+          console.log('WebLN payment failed, user can pay manually:', weblnError);
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating bet:', error);
+      toast({
+        title: "Bet Creation Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isWeblnEnabled, toast]);
+
+  const checkBetStatus = useCallback(async (betId: number) => {
+    try {
+      const response = await fetch(`/api/bets/${betId}/status`);
+      if (!response.ok) {
+        throw new Error('Failed to check bet status');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to check bet status:', error);
+      throw error;
+    }
+  }, []);
+
+  const fetchBalance = useCallback(async () => {
+    try {
+      // Try WebLN first if available
+      if (isWeblnEnabled && window.webln) {
+        try {
+          const weblnBalance = await window.webln.getBalance();
+          const balance = {
+            availableBalanceSat: weblnBalance.balance,
+            pendingReceiveSat: 0
+          };
+          setBalance(balance);
+          return balance;
+        } catch (weblnError) {
+          console.log('WebLN balance fetch failed, falling back to API');
+        }
+      }
+
+      // Fallback to API
+      const response = await fetch('/api/wallet/balance');
+      if (!response.ok) {
+        throw new Error('Failed to fetch wallet balance');
+      }
+      const balance = await response.json();
+      setBalance(balance);
+      return balance;
+    } catch (error) {
+      console.error('Failed to fetch balance:', error);
+      throw error;
+    }
+  }, [isWeblnEnabled]);
+
+  const connectNWC = useCallback(async (connectionString: string) => {
+    try {
+      // Store NWC connection string securely (in practice, you'd encrypt this)
+      localStorage.setItem('nwc_connection', connectionString);
+      setWalletConnection('nwc');
+      
+      toast({
+        title: "NWC Connected",
+        description: "Successfully connected to your Lightning wallet",
+      });
+
+      // Fetch balance after connecting
+      await fetchBalance();
+    } catch (error) {
+      console.error('NWC connection failed:', error);
+      toast({
+        title: "NWC Connection Failed",
+        description: error instanceof Error ? error.message : "Failed to connect to wallet",
+        variant: "destructive",
+      });
+    }
+  }, [fetchBalance, toast]);
+
+  const disconnectWallet = useCallback(() => {
+    localStorage.removeItem('nwc_connection');
+    setWalletConnection('none');
+    setBalance(null);
+    
+    toast({
+      title: "Wallet Disconnected",
+      description: "Your wallet has been disconnected",
+    });
+  }, [toast]);
+
+  return {
+    // Methods
+    createBet,
+    checkBetStatus,
+    fetchBalance,
+    connectNWC,
+    disconnectWallet,
+    checkWeblnEnabled,
+    
+    // State
+    isLoading,
+    balance,
+    walletConnection,
+    isWeblnEnabled
+  };
+}
