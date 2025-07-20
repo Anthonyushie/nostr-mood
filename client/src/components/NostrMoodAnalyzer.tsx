@@ -9,6 +9,7 @@ import { SimplePool, Event, nip19 } from 'nostr-tools';
 import Sentiment from 'sentiment';
 import SWHandler from 'smart-widget-handler';
 import PredictionMarketContainer from './PredictionMarket/PredictionMarketContainer';
+import NostrShareTest from './NostrShare/NostrShareTest';
 
 interface SentimentResult {
   score: number;
@@ -220,31 +221,86 @@ const NostrMoodAnalyzer = () => {
   };
 
   const shareAnalysis = () => {
-    if (!result || !isWidgetMode) return;
+    if (!result) return;
 
-    const analysisText = `I analyzed a Nostr post with NostrMood! 
+    const analysisText = `🔍 NostrMood Analysis Results
 
-Sentiment: ${getSentimentLabel(result.sentiment.score)} (${result.sentiment.score > 0 ? '+' : ''}${result.sentiment.score})
+📊 Sentiment: ${getSentimentLabel(result.sentiment.score)} (${result.sentiment.score > 0 ? '+' : ''}${result.sentiment.score})
+📈 Comparative Score: ${result.sentiment.comparative.toFixed(3)}
 
-Original post: "${result.postContent.slice(0, 100)}${result.postContent.length > 100 ? '...' : ''}"
+${result.sentiment.positive.length > 0 ? `✅ Positive words: ${result.sentiment.positive.join(', ')}` : ''}
+${result.sentiment.negative.length > 0 ? `❌ Negative words: ${result.sentiment.negative.join(', ')}` : ''}
 
-#NostrMood #SentimentAnalysis #Nostr`;
+📝 Original post: "${result.postContent.slice(0, 150)}${result.postContent.length > 150 ? '...' : ''}"
+
+🔗 Post ID: ${result.postId.slice(0, 16)}...
+
+#NostrMood #SentimentAnalysis #Nostr #Bitcoin`;
 
     const eventDraft = {
       content: analysisText,
-      tags: [['t', 'nostrmood'], ['t', 'sentiment'], ['t', 'analysis']],
-      kind: 1
+      tags: [
+        ['t', 'nostrmood'], 
+        ['t', 'sentiment'], 
+        ['t', 'analysis'],
+        ['t', 'nostr'],
+        ['t', 'bitcoin'],
+        ['e', result.postId] // Reference the analyzed post
+      ],
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000)
     };
 
-    // Request YakiHonne to publish the analysis
+    console.log('Sharing analysis:', { isWidgetMode, eventDraft });
+
+    // Try YakiHonne Smart Widget first
+    if (isWidgetMode) {
+      try {
+        console.log('Using YakiHonne Smart Widget to share');
+        SWHandler.client.requestEventPublish(eventDraft, window.location.ancestorOrigins?.[0] || '*');
+        toast({
+          title: "Sharing Analysis",
+          description: "Requesting YakiHonne to publish your sentiment analysis...",
+        });
+        return;
+      } catch (error) {
+        console.error('YakiHonne sharing failed:', error);
+      }
+    }
+
+    // Fallback to direct Nostr extension
+    if (typeof window !== 'undefined' && (window as any).nostr) {
+      try {
+        console.log('Using browser Nostr extension to share');
+        (window as any).nostr.signEvent(eventDraft).then((signedEvent: any) => {
+          console.log('Event signed:', signedEvent);
+          toast({
+            title: "Analysis Shared",
+            description: "Your sentiment analysis has been signed and ready to publish!",
+          });
+        }).catch((error: any) => {
+          console.error('Nostr signing failed:', error);
+          toast({
+            title: "Share Failed",
+            description: "Could not sign the event. Please check your Nostr extension.",
+            variant: "destructive",
+          });
+        });
+        return;
+      } catch (error) {
+        console.error('Nostr extension sharing failed:', error);
+      }
+    }
+
+    // Final fallback - copy to clipboard
     try {
-      SWHandler.client.requestEventPublish(eventDraft, window.location.ancestorOrigins?.[0] || '*');
+      navigator.clipboard.writeText(analysisText);
       toast({
-        title: "Sharing Analysis",
-        description: "Requesting to publish your sentiment analysis...",
+        title: "Copied to Clipboard",
+        description: "Analysis copied! You can paste it manually to share.",
       });
     } catch (error) {
-      console.error('Error sharing analysis:', error);
+      console.error('Clipboard copy failed:', error);
       toast({
         title: "Share Failed",
         description: "Could not share the analysis. Please try again.",
@@ -376,21 +432,22 @@ Original post: "${result.postContent.slice(0, 100)}${result.postContent.length >
                   </div>
                 )}
 
-                {isWidgetMode && user && (
-                  <div className="pt-2 border-t border-border">
-                    <Button 
-                      onClick={shareAnalysis}
-                      className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
-                      size="sm"
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Share Analysis on Nostr
-                    </Button>
-                  </div>
-                )}
+                <div className="pt-2 border-t border-border">
+                  <Button 
+                    onClick={shareAnalysis}
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
+                    size="sm"
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    {isWidgetMode ? 'Share Analysis on Nostr' : 'Copy Analysis Results'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
+          
+          {/* Nostr Sharing Test (Development) */}
+          <NostrShareTest />
           
           {/* Prediction Markets Integration */}
           {result && (
