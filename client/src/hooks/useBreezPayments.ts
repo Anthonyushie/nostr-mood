@@ -25,6 +25,8 @@ export function useBreezPayments() {
   ) => {
     setIsLoading(true);
     try {
+      console.log('Creating bet:', { marketId, position, amount, userPubkey });
+      
       const response = await fetch('/api/bets', {
         method: 'POST',
         headers: {
@@ -38,12 +40,35 @@ export function useBreezPayments() {
         }),
       });
 
+      console.log('Response status:', response.status, response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create bet');
+        let errorMessage = `Failed to create bet (${response.status})`;
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (jsonError) {
+          console.warn('Failed to parse error response as JSON:', jsonError);
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response, got ${contentType}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      if (!responseText.trim()) {
+        throw new Error('Empty response from server');
+      }
+
+      const data = JSON.parse(responseText);
       
       toast({
         title: 'Invoice Created',

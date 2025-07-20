@@ -57,6 +57,25 @@ export const useMarket = (userPubkey?: string): MarketData & MarketActions => {
   useEffect(() => {
     loadData();
     
+    // Also fetch from API if localStorage is empty
+    const checkApiMarkets = async () => {
+      try {
+        const response = await fetch('/api/markets');
+        if (response.ok) {
+          const apiMarkets = await response.json();
+          if (apiMarkets.length > 0 && markets.length === 0) {
+            console.log('Loading markets from API:', apiMarkets);
+            setMarkets(apiMarkets);
+            localStorage.setItem('predictionMarkets', JSON.stringify(apiMarkets));
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch markets from API:', error);
+      }
+    };
+    
+    checkApiMarkets();
+    
     // Start automatic settlement monitoring
     const stopSettlement = settlementBot.startAutomaticSettlement(30000); // Check every 30 seconds
     

@@ -124,12 +124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: invoice.expiresAt
       });
 
-      res.json({
+      const response = {
         bet,
         paymentRequest: invoice.paymentRequest,
         invoiceId: invoice.invoiceId,
         expiresAt: invoice.expiresAt
-      });
+      };
+      
+      console.log('Sending bet response:', JSON.stringify(response, null, 2));
+      res.json(response);
     } catch (error) {
       console.error('Error creating bet:', error);
       res.status(400).json({ error: error.message });
