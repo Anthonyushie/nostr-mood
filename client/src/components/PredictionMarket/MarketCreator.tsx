@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
@@ -68,18 +68,23 @@ const MarketCreator = ({ postId, currentSentiment, onMarketCreated, disabled }: 
         creatorPubkey: 'temp-pubkey', // This would come from user context
       };
 
-      // Store in IndexedDB for now (in a real app, this would be an API call)
-      const markets = JSON.parse(localStorage.getItem('predictionMarkets') || '[]');
-      const newMarket = {
-        id: Date.now(),
-        ...marketData,
-        createdAt: new Date().toISOString(),
-        isSettled: false,
-        totalYesPool: 0,
-        totalNoPool: 0,
-        feePercentage: 5.0,
-      };
+      // Create market via API
+      const response = await fetch('/api/markets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(marketData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create market: ${response.statusText}`);
+      }
+
+      const newMarket = await response.json();
       
+      // Also update localStorage for cross-tab sync
+      const markets = JSON.parse(localStorage.getItem('predictionMarkets') || '[]');
       markets.push(newMarket);
       localStorage.setItem('predictionMarkets', JSON.stringify(markets));
 
@@ -123,6 +128,9 @@ const MarketCreator = ({ postId, currentSentiment, onMarketCreated, disabled }: 
             <Plus className="h-5 w-5" />
             Create Prediction Market
           </DialogTitle>
+          <DialogDescription>
+            Create a Lightning-powered prediction market based on sentiment analysis of the current post.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

@@ -1,0 +1,131 @@
+3index-DRGPO16c.js:227 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-DRGPO16c.js:227Understand this warning
+index-DRGPO16c.js:232 Creating invoice for: Object
+index-DRGPO16c.js:232 Creating bet: Objectamount: 100marketId: 1753015420619position: "yes"userPubkey: undefined[[Prototype]]: Object
+index-DRGPO16c.js:232 MarketId type: number value: 1753015420619
+index-DRGPO16c.js:232 Test API response: Object
+/api/bets:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+index-DRGPO16c.js:232 Response status: 404 
+index-DRGPO16c.js:232 Response headers: Object
+index-DRGPO16c.js:232 Error creating bet: Error: Market not found
+    at index-DRGPO16c.js:232:7935
+    at async x (index-DRGPO16c.js:232:10610)
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:232 Failed to create invoice: Error: Market not found
+    at index-DRGPO16c.js:232:7935
+    at async x (index-DRGPO16c.js:232:10610)
+x @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:227 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-DRGPO16c.js:227Understand this warning
+index-DRGPO16c.js:232 Error analyzing sentiment for settlement: Error: Post not found for settlement analysis
+    at D6e.analyzeSentimentForSettlement (index-DRGPO16c.js:232:19629)
+    at async D6e.settleMarket (index-DRGPO16c.js:232:20767)
+    at async D6e.checkAndSettleExpiredMarkets (index-DRGPO16c.js:232:21756)
+    at async index-DRGPO16c.js:232:22007
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+await in analyzeSentimentForSettlement
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:232 Error settling market: Error: Post not found for settlement analysis
+    at D6e.analyzeSentimentForSettlement (index-DRGPO16c.js:232:19629)
+    at async D6e.settleMarket (index-DRGPO16c.js:232:20767)
+    at async D6e.checkAndSettleExpiredMarkets (index-DRGPO16c.js:232:21756)
+    at async index-DRGPO16c.js:232:22007
+settleMarket @ index-DRGPO16c.js:232
+await in settleMarket
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:232 Failed to settle market 1753015420619: Error: Post not found for settlement analysis
+    at D6e.analyzeSentimentForSettlement (index-DRGPO16c.js:232:19629)
+    at async D6e.settleMarket (index-DRGPO16c.js:232:20767)
+    at async D6e.checkAndSettleExpiredMarkets (index-DRGPO16c.js:232:21756)
+    at async index-DRGPO16c.js:232:22007
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+await in checkAndSettleExpiredMarkets
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://relay.current.fyi/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://relay.nostr.band/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://relay.damus.io/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://nostr-pub.wellorder.net/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://nos.lol/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:183 WebSocket connection to 'wss://relay.current.fyi/' failed: 
+(anonymous) @ index-DRGPO16c.js:183
+connect @ index-DRGPO16c.js:183
+ensureRelay @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+subscribeMap @ index-DRGPO16c.js:183
+subscribe @ index-DRGPO16c.js:183
+subscribeEose @ index-DRGPO16c.js:183
+(anonymous) @ index-DRGPO16c.js:183
+querySync @ index-DRGPO16c.js:183
+analyzeSentimentForSettlement @ index-DRGPO16c.js:232
+settleMarket @ index-DRGPO16c.js:232
+checkAndSettleExpiredMarkets @ index-DRGPO16c.js:232
+(anonymous) @ index-DRGPO16c.js:232Understand this error
+index-DRGPO16c.js:232 Market settled: {marketId: 1753015420619, currentSentiment: 0.13513513513513514, threshold: 0.6, result: false, winningPosition: 'no', …}
