@@ -44,14 +44,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  if (req.method === 'POST') {
+  if (req.method === 'GET') {
+    // Handle GET requests - return some example bets for demonstration
+    try {
+      const exampleBets = [
+        {
+          id: 1,
+          marketId: 1,
+          userPubkey: 'demo_user',
+          position: 'yes',
+          amount: 1000,
+          invoiceId: 'demo_invoice_1',
+          paymentRequest: 'lnbc1000u1p...demo_payment_request',
+          paymentHash: '',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+          isPaid: true,
+          isSettled: false,
+          payout: 0,
+          payoutStatus: 'pending',
+          payoutRetries: 0,
+          payoutError: null,
+          payoutTxId: null,
+          payoutInvoice: null,
+        }
+      ];
+      
+      res.json(exampleBets);
+    } catch (error) {
+      console.error('Error fetching bets:', error);
+      res.status(500).json({ error: 'Failed to fetch bets' });
+    }
+  } else if (req.method === 'POST') {
     try {
       console.log('=== BETS API REQUEST ===');
       console.log('Method:', req.method);
